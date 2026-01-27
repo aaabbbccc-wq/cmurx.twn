@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zodiac Ops Center | v4.27 System Update</title>
+    <title>Zodiac Ops Center | v4.32 Update</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3.4.19/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -55,7 +55,7 @@
         <div class="container mx-auto px-6 h-full flex justify-between items-center max-w-7xl">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg text-xl"><i class="fa-solid fa-shield-halved"></i></div>
-                <div><div class="font-bold text-xl text-white tracking-wide">ZODIAC OPS</div><div class="text-xs text-slate-400 font-mono tracking-widest">TEACHER v4.27</div></div>
+                <div><div class="font-bold text-xl text-white tracking-wide">ZODIAC OPS</div><div class="text-xs text-slate-400 font-mono tracking-widest">TEACHER v4.32</div></div>
             </div>
             <div class="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-800 px-8 py-2 rounded-full border border-slate-600">
                 <div class="flex flex-col items-center"><span class="text-[10px] text-slate-400 tracking-wider font-bold uppercase">總人數</span><span class="text-2xl font-mono font-bold leading-none text-white">{{ studentCount }}</span></div>
@@ -204,10 +204,11 @@
                             <span class="text-sm font-bold text-slate-400 uppercase">教材與連結管理</span>
                             <button @click="syncLinks" :class="linksDirty ? 'bg-emerald-600 text-white animate-pulse' : 'bg-slate-700 text-slate-400'" class="px-4 py-2 rounded-lg text-xs font-bold transition border border-slate-600"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> {{ linksDirty ? '點此儲存變更' : '已同步' }}</button>
                         </div>
-                        <div class="space-y-5 flex-1">
+                        <div class="space-y-5 flex-1 overflow-y-auto">
                             <div class="flex items-center gap-4"><div class="w-8 flex justify-center"><i class="fa-solid fa-book text-blue-400 text-2xl"></i></div><div class="flex-1"><label class="text-xs text-blue-300 font-bold mb-1 block">Notebook (教材)</label><input v-model="localLinks.notebook" @input="linksDirty=true" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-mono text-white focus:border-blue-500 transition" placeholder="請貼上網址..."></div></div>
                             <div class="flex items-center gap-4"><div class="w-8 flex justify-center"><i class="fa-solid fa-comments text-indigo-400 text-2xl"></i></div><div class="flex-1"><label class="text-xs text-indigo-300 font-bold mb-1 block">Slido (互動)</label><input v-model="localLinks.slido" @input="linksDirty=true" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-mono text-white focus:border-indigo-500 transition" placeholder="請貼上網址..."></div></div>
                             <div class="flex items-center gap-4"><div class="w-8 flex justify-center"><i class="fa-solid fa-clipboard-check text-purple-400 text-2xl"></i></div><div class="flex-1"><label class="text-xs text-purple-300 font-bold mb-1 block">Forms (測驗)</label><input v-model="localLinks.forms" @input="linksDirty=true" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-mono text-white focus:border-purple-500 transition" placeholder="請貼上網址..."></div></div>
+                            <div class="flex items-center gap-4 border-t border-slate-700 pt-4"><div class="w-8 flex justify-center"><i class="fa-brands fa-google-drive text-amber-400 text-2xl"></i></div><div class="flex-1"><label class="text-xs text-amber-300 font-bold mb-1 block">Assignment (心得繳交)</label><input v-model="localLinks.assignment" @input="linksDirty=true" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-mono text-white focus:border-amber-500 transition" placeholder="請貼上 Google Form 連結..."></div></div>
                         </div>
                     </div>
                     
@@ -218,6 +219,7 @@
                             <div><div class="flex justify-between text-xs font-bold mb-1 text-blue-300"><span>2. 閱讀 (Notebook)</span><span class="text-white">{{ stats.notebook }} / {{ studentCount }}</span></div><div class="h-3 bg-slate-900 rounded-full border border-slate-700 overflow-hidden"><div class="h-full bg-blue-500" :style="`width:${(studentCount>0?stats.notebook/studentCount:0)*100}%`"></div></div></div>
                             <div><div class="flex justify-between text-xs font-bold mb-1 text-indigo-300"><span>3. 互動 (Slido)</span><span class="text-white">{{ stats.slido }} / {{ studentCount }}</span></div><div class="h-3 bg-slate-900 rounded-full border border-slate-700 overflow-hidden"><div class="h-full bg-indigo-500" :style="`width:${(studentCount>0?stats.slido/studentCount:0)*100}%`"></div></div></div>
                             <div><div class="flex justify-between text-xs font-bold mb-1 text-purple-300"><span>4. 測驗 (Forms)</span><span class="text-white">{{ stats.forms }} / {{ studentCount }}</span></div><div class="h-3 bg-slate-900 rounded-full border border-slate-700 overflow-hidden"><div class="h-full bg-purple-500" :style="`width:${(studentCount>0?stats.forms/studentCount:0)*100}%`"></div></div></div>
+                            <div><div class="flex justify-between text-xs font-bold mb-1 text-amber-300"><span>5. 報告 (Report)</span><span class="text-white">{{ stats.assignment }} / {{ studentCount }}</span></div><div class="h-3 bg-slate-900 rounded-full border border-slate-700 overflow-hidden"><div class="h-full bg-amber-500" :style="`width:${(studentCount>0?stats.assignment/studentCount:0)*100}%`"></div></div></div>
                         </div>
                         <div class="flex flex-col gap-2 mt-6">
                             <button @click="syncToSheets" :disabled="isSyncing" class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 text-white py-3 rounded-xl text-base font-bold transition flex justify-center items-center gap-3 border-b-4 border-indigo-800 active:border-b-0 active:translate-y-1 shadow-lg">
@@ -235,7 +237,7 @@
                     <span>2. 任務階段控制 (Phase Control)</span>
                     <span class="text-xs text-slate-400 font-normal">點擊下方按鈕以解鎖學生的任務卡片</span>
                  </div>
-                 <div class="grid grid-cols-5 gap-3">
+                 <div class="grid grid-cols-6 gap-3">
                     <button v-for="(p, k) in phases" :key="k" @click="switchPhase(k)" class="relative py-5 rounded-xl transition-all flex flex-col items-center justify-center gap-2 group overflow-hidden border-2" :class="state.currentPhase===k ? `bg-slate-700 border-${p.color}-500 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] scale-105` : 'bg-slate-900 border-slate-700 hover:bg-slate-800 hover:border-slate-500'">
                         <i :class="p.icon" class="text-3xl relative z-10 transition-transform group-hover:scale-110" :class="state.currentPhase===k ? `text-${p.color}-400` : 'text-slate-500'"></i>
                         <span class="text-sm font-bold uppercase relative z-10" :class="state.currentPhase===k ? 'text-white' : 'text-slate-500'">{{ p.shortLabel }}</span>
@@ -282,7 +284,8 @@
                                         <div class="w-4 h-4 rounded-full border border-slate-600" :class="s.tasks?.notebook?.done?'bg-blue-500 shadow-[0_0_8px_#3b82f6]':'bg-slate-800'" title="閱讀"></div>
                                         <div class="w-4 h-4 rounded-full border border-slate-600" :class="s.tasks?.slido?.done?'bg-indigo-500 shadow-[0_0_8px_#6366f1]':'bg-slate-800'" title="互動"></div>
                                         <div class="w-4 h-4 rounded-full border border-slate-600" :class="s.tasks?.forms?.done?'bg-purple-500 shadow-[0_0_8px_#a855f7]':'bg-slate-800'" title="測驗"></div>
-                                        <div class="w-4 h-4 rounded-full border border-slate-600" :class="s.rating > 0?'bg-rose-500 shadow-[0_0_8px_#f43f5e]':'bg-slate-800'" title="心得"></div>
+                                        <div class="w-4 h-4 rounded-full border border-slate-600" :class="s.tasks?.assignment?.done?'bg-amber-500 shadow-[0_0_8px_#f59e0b]':'bg-slate-800'" title="心得繳交"></div>
+                                        <div class="w-4 h-4 rounded-full border border-slate-600" :class="s.rating > 0?'bg-rose-500 shadow-[0_0_8px_#f43f5e]':'bg-slate-800'" title="總結"></div>
                                     </div>
                                 </td>
                                 <td class="p-4 text-right pr-6"><span class="status-dot" :class="getStatusColor(s)"></span></td>
@@ -307,13 +310,14 @@ import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from
 
 const CONFIG = {
     FIREBASE: {
-        apiKey: "AIzaSyDmVar5gSdLQJtXW1Ya67XwGHvlsPYAgEU",
-        authDomain: "pathophysiology-2f358.firebaseapp.com",
-        databaseURL: "https://pathophysiology-2f358-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "pathophysiology-2f358",
-        storageBucket: "pathophysiology-2f358.firebasestorage.app",
-        messagingSenderId: "878249299298",
-        appId: "1:878249299298:web:8bea8edaa79aa6a03ff03b"
+        apiKey: "AIzaSyBPdK2Ptbc9srt8DY74URKQyNmceexM-ro",
+        authDomain: "cmu-11402-pathophysiology.firebaseapp.com",
+        databaseURL: "https://cmu-11402-pathophysiology-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "cmu-11402-pathophysiology",
+        storageBucket: "cmu-11402-pathophysiology.firebasestorage.app",
+        messagingSenderId: "367793212618",
+        appId: "1:367793212618:web:c11acedc50ce6fc3897833",
+        measurementId: "G-493SYB75VB"
     },
     GAS_URL: "https://script.google.com/macros/s/AKfycbxxvML7ybHS6whjHjIndtia8bsyZ9zKQaB5XNGDaD4Pn4rVKfs_xgusfLtnC-tNUr6B/exec", 
     ZODIAC: [
@@ -326,7 +330,8 @@ const CONFIG = {
         warmup: { shortLabel:'階段 1: 閱讀', icon:'fa-solid fa-book-open', color:'blue' }, 
         interact: { shortLabel:'階段 2: 互動', icon:'fa-solid fa-comments', color:'indigo' }, 
         quiz: { shortLabel:'階段 3: 測驗', icon:'fa-solid fa-pen-to-square', color:'purple' }, 
-        all_open: { shortLabel:'🔥 全開 (ALL)', icon:'fa-solid fa-rocket', color:'emerald' } 
+        all_open: { shortLabel:'🔥 全開 (主任務)', icon:'fa-solid fa-rocket', color:'emerald' },
+        assignment_mode: { shortLabel:'📂 獨立: 心得繳交', icon:'fa-solid fa-folder-open', color:'amber' }
     }
 };
 
@@ -421,7 +426,6 @@ function useArchiver(sessionId, students, addToast) {
         if (count === 0 && !confirm("目前沒有學生資料，確定要存檔嗎？")) return;
         
         isSyncing.value = true;
-        // Keep manual ID handling for the "Syncing..." message to remove it later
         addToast("正在連線到 Google Sheet...", "info", "fa-solid fa-cloud-arrow-up");
 
         try {
@@ -620,7 +624,7 @@ createApp({
         const saveSchedule = () => update(dbRef(db, `classrooms/${form.sessionId}/status/schedule`), schedule);
         const refreshId = () => form.sessionId = generateSessionId();
         
-        const localLinks = reactive({ notebook: '', slido: '', forms: '' });
+        const localLinks = reactive({ notebook: '', slido: '', forms: '', assignment: '' });
         const linksDirty = ref(false);
         watch(() => status.links, (newVal) => { if (!linksDirty.value && newVal) Object.assign(localLinks, newVal); }, { deep: true });
         const syncLinks = () => update(dbRef(db, `classrooms/${form.sessionId}/status/links`), localLinks).then(() => { 
@@ -694,10 +698,11 @@ createApp({
             const notebook = list.filter(s => s.tasks?.notebook?.done).length; 
             const slido = list.filter(s => s.tasks?.slido?.done).length; 
             const forms = list.filter(s => s.tasks?.forms?.done).length; 
+            const assignment = list.filter(s => s.tasks?.assignment?.done).length;
             const debrief = list.filter(s => s.rating > 0).length;
-            return { calibration, notebook, slido, forms, debrief, totalDone: calibration + notebook + slido + forms + debrief }; 
+            return { calibration, notebook, slido, forms, assignment, debrief, totalDone: calibration + notebook + slido + forms + assignment + debrief }; 
         });
-        const globalProgress = computed(() => activeCount.value === 0 ? 0 : (stats.value.totalDone / (activeCount.value * 5)) * 100);
+        const globalProgress = computed(() => activeCount.value === 0 ? 0 : (stats.value.totalDone / (activeCount.value * 6)) * 100);
 
         const copyLink = () => navigator.clipboard.writeText(`${window.location.origin}/index.html?id=${form.sessionId}`).then(()=>addToast("連結已複製", "success", "fa-solid fa-copy"));
         const copySessionId = () => navigator.clipboard.writeText(form.sessionId).then(()=>addToast("教室代碼 (Session ID) 已複製", "success", "fa-solid fa-key"));

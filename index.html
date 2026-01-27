@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Student | v4.29 ID Visible</title>
+    <title>Student Portal | v4.33</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3.4.19/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -69,7 +69,7 @@
             <div class="relative z-10 text-center">
                 <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl text-white shadow-lg"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1 class="text-3xl font-extrabold text-white mb-2">Student</h1>
-                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.29</p>
+                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.33</p>
                 <div class="space-y-4">
                     <div><label class="text-[10px] font-bold text-slate-500 uppercase">Session ID (教室代碼)</label><input v-model="form.sessionId" class="w-full p-4 bg-slate-800 border border-slate-600 rounded-xl font-mono font-bold text-center text-xl text-white outline-none focus:border-blue-500 uppercase placeholder:text-slate-600" placeholder="請輸入代碼"></div>
                     <button @click="enterRoom" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/30 disabled:opacity-50 flex justify-center items-center gap-2">
@@ -203,11 +203,14 @@
                             <div v-if="isUnlocked(key)" class="flex flex-col gap-2 mt-2">
                                 <button @click="openLink(key)" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition active:scale-95 border border-slate-600 hover:border-white text-slate-200 hover:bg-slate-800">
                                     <i v-if="myTasks[key].done" class="fa-solid fa-rotate-right"></i>
+                                    <i v-else-if="key === 'assignment'" class="fa-brands fa-google-drive"></i>
                                     <i v-else class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    <span>{{ myTasks[key].done ? '再次複習' : '開啟教材/連結' }}</span>
+                                    <span>
+                                        {{ myTasks[key].done ? '再次複習' : (key==='assignment' ? '前往上傳心得 (Google Form)' : '開啟教材/連結') }}
+                                    </span>
                                 </button>
-                                <button v-if="myTasks[key].started && !myTasks[key].done" @click="markDone(key)" class="w-full bg-white text-slate-900 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-200 transition active:scale-95 flex justify-center items-center gap-2 shadow-lg animate-pulse-slow">
-                                    <i class="fa-regular fa-square-check text-lg"></i> 標記為已完成
+                                <button v-if="myTasks[key].started && !myTasks[key].done" @click="markDone(key)" class="w-full bg-emerald-600 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-emerald-500 transition active:scale-95 flex justify-center items-center gap-2 shadow-lg animate-pulse-slow">
+                                    <i class="fa-regular fa-square-check text-lg"></i> {{ key==='assignment' ? '我已上傳完畢，標記完成' : '標記為已完成' }}
                                 </button>
                             </div>
                             <div v-else class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900/50 text-slate-500 text-[10px] rounded-lg font-bold mt-2 border border-slate-700">
@@ -254,13 +257,14 @@ import { getDatabase, ref as dbRef, onValue, runTransaction, get, update, onDisc
 
 const CONFIG = {
     FIREBASE: {
-        apiKey: "AIzaSyDmVar5gSdLQJtXW1Ya67XwGHvlsPYAgEU",
-        authDomain: "pathophysiology-2f358.firebaseapp.com",
-        databaseURL: "https://pathophysiology-2f358-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "pathophysiology-2f358",
-        storageBucket: "pathophysiology-2f358.firebasestorage.app",
-        messagingSenderId: "878249299298",
-        appId: "1:878249299298:web:8bea8edaa79aa6a03ff03b"
+        apiKey: "AIzaSyBPdK2Ptbc9srt8DY74URKQyNmceexM-ro",
+        authDomain: "cmu-11402-pathophysiology.firebaseapp.com",
+        databaseURL: "https://cmu-11402-pathophysiology-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "cmu-11402-pathophysiology",
+        storageBucket: "cmu-11402-pathophysiology.firebasestorage.app",
+        messagingSenderId: "367793212618",
+        appId: "1:367793212618:web:c11acedc50ce6fc3897833",
+        measurementId: "G-493SYB75VB"
     },
     ZODIAC: [
         {label:'子鼠', icon:'⚡️', element:'air'}, {label:'丑牛', icon:'🧱', element:'earth'}, {label:'寅虎', icon:'🔥', element:'fire'}, {label:'卯兔', icon:'🧐', element:'water'},
@@ -270,7 +274,8 @@ const CONFIG = {
     TASKS_META: {
         notebook: { title: 'Gathering (知識獲取)', desc: '閱讀指定教材，並使用 AI 輔助整理重點。', icon: 'fa-solid fa-book-sparkles' },
         slido: { title: 'Briefing (互動提問)', desc: '進入 Slido 聊天室，參與投票或提出問題。', icon: 'fa-solid fa-users-rays' },
-        forms: { title: 'Assessment (成效檢核)', desc: '完成最終測驗，驗證今日學習成果。', icon: 'fa-solid fa-clipboard-check' }
+        forms: { title: 'Assessment (成效檢核)', desc: '完成最終測驗，驗證今日學習成果。', icon: 'fa-solid fa-clipboard-check' },
+        assignment: { title: 'Report (心得繳交)', desc: '點擊開啟 Google 表單，填寫學號並上傳檔案 (Word/PDF/影像)。', icon: 'fa-brands fa-google-drive' }
     }
 };
 
@@ -495,7 +500,13 @@ function useRoom(sessionId, myUid) {
 }
 
 function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
-    const myTasks = reactive({ calibration: { done: false, confidence: 3 }, notebook: { done: false, started: false }, slido: { done: false, started: false }, forms: { done: false, started: false } });
+    const myTasks = reactive({ 
+        calibration: { done: false, confidence: 3 }, 
+        notebook: { done: false, started: false }, 
+        slido: { done: false, started: false }, 
+        forms: { done: false, started: false },
+        assignment: { done: false, started: false }
+    });
     const tempCalibration = reactive({ confidence: 3, hasPreview: false });
     const tempRating = ref(3);
     const tempFeedback = ref('');
@@ -519,36 +530,17 @@ function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
     };
 
     const submitCalibration = () => {
-        
-        if (!myUid.value || !sessionId.value) { 
-            addToast("連線資料異常，請重新整理網頁", "error"); 
-            return; 
-        }
-
-        
+        if (!myUid.value || !sessionId.value) { addToast("連線資料異常，請重新整理網頁", "error"); return; }
         const now = Date.now();
         const fakeStartTime = now - 6000;
-
-        
         update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/calibration`), { 
             done: true, 
             confidence: tempCalibration.confidence, 
             hasPreview: tempCalibration.hasPreview || false,
-            
-            
             startTime: fakeStartTime,
             endTime: now,
             duration: 6 
-        })
-        .then(() => {
-            playSFX('success'); 
-            
-        })
-        .catch(e => {
-            console.error("Calibration Error:", e);
-            // 如果失敗，顯示錯誤原因
-            addToast("校準失敗: " + e.message, "error");
-        });
+        }).then(() => playSFX('success')).catch(e => addToast("校準失敗: " + e.message, "error"));
     };
 
     const openLink = (k) => {
@@ -557,49 +549,24 @@ function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
             update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { started: true, startTime: Date.now() }); 
         }
         setTimeout(() => {
-            if(globalState.links && globalState.links[k]) window.open(globalState.links[k], '_blank');
+            let url = globalState.links && globalState.links[k];
+            if (url) {
+                if (k === 'assignment' && url.includes('forms') && myProfile.studentId) {
+                }
+                window.open(url, '_blank');
+            }
         }, 100);
     };
 
     const markDone = (k) => {
-        if (!myUid.value || !sessionId.value) { 
-            addToast("連線資料異常，請重新整理網頁", "error"); 
-            return; 
-        }
-
+        if (!myUid.value || !sessionId.value) { addToast("連線資料異常，請重新整理網頁", "error"); return; }
         const now = Date.now();
-        
         let startTime = myTasks[k].startTime || (now - 10000); 
         let duration = Math.round((now - startTime) / 1000);
-        
-        
         if (isNaN(duration) || duration < 0) duration = 10; 
-
-        
         update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { 
-            done: true, 
-            endTime: now, 
-            duration: duration,
-            startTime: startTime 
-        })
-        .then(() => {
-            playSFX('success');
-        })
-        .catch(e => {
-            console.error("Task Update Error:", e);
-            const err = e.message.toLowerCase(); // 轉小寫以忽略大小寫差異
-
-            // 4. 精確錯誤判斷
-            if (err.includes('permission') || err.includes('denied')) {
-                // 這代表是被 Firebase 安全規則擋下（通常是速度過快）
-                addToast("任務完成速度過快，系統判定無效。請確實閱讀。", "error");
-            } else if (err.includes('invalid path')) {
-                addToast("路徑錯誤，請重新登入", "error");
-            } else {
-                // 5. 顯示真正的錯誤原因
-                addToast("更新失敗: " + e.message, "error");
-            }
-        });
+            done: true, endTime: now, duration: duration, startTime: startTime 
+        }).then(() => playSFX('success')).catch(e => addToast("更新失敗: " + e.message, "error"));
     };
 
     const submitDebrief = () => {
@@ -607,7 +574,6 @@ function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
         if(cleanFeedback.length < 2) { addToast("請填寫至少幾個字的心得", "error"); return; }
         playSFX('success');
         update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`), { rating: tempRating.value, feedback: cleanFeedback });
-        
         addToast(myProfile.rating ? "心得已更新！" : "心得已提交，感謝您的回饋！", "success");
         isEditing.value = false;
     };
@@ -615,13 +581,19 @@ function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
     const isUnlocked = (k) => {
         if (!myTasks.calibration.done) return false;
         
-        const rawPhase = globalState.currentPhase || globalState.phase || globalState.mode || globalState.step || 'waiting';
+        const rawPhase = globalState.currentPhase || 'waiting';
         const p = String(rawPhase).toLowerCase(); 
 
-        if (p.includes('all') || p.includes('open')) return true;
-        if (k === 'notebook') return ['warmup', 'interact', 'quiz'].some(x => p.includes(x));
+        const isMainPhase = ['warmup', 'interact', 'quiz', 'all_open'].some(x => p.includes(x));
+        
+        if (k === 'notebook') return isMainPhase;
+        
         if (k === 'slido') return ['interact', 'all_open'].some(x => p.includes(x));
+        
         if (k === 'forms') return ['quiz', 'all_open'].some(x => p.includes(x));
+        
+        if (k === 'assignment') return p.includes('assignment') || p.includes('report');
+        
         return false;
     };
 
@@ -701,7 +673,12 @@ createApp({
             if(success) startDashboardServices();
         };
         
-        const allTasksDone = computed(() => myTasks.notebook.done && myTasks.slido.done && myTasks.forms.done);
+        // 修改後的判斷邏輯：完成 (1+2+3) 或者 (4) 皆可
+        const allTasksDone = computed(() => {
+            const regular = myTasks.notebook.done && myTasks.slido.done && myTasks.forms.done;
+            const assignment = myTasks.assignment.done;
+            return regular || assignment;
+        });
         
         const getTaskClass = (k) => {
             if (myTasks[k].done) return 'task-done beacon-border';

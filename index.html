@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Student Portal | v4.41 Final Stable</title>
+    <title>Student Portal | v4.6 Mystery</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3.4.19/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,26 +26,23 @@
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .offline-mask { backdrop-filter: blur(5px); background: rgba(15, 23, 42, 0.9); }
         
-        /* Task Card Styles */
         .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; background: rgba(30, 41, 59, 0.4); }
-        
-        /* Locked State: pointer-events: none is what caused the slider issue. 
-           We fixed this in JS logic, but keeping the style is correct for ACTUALLY locked tasks. */
         .task-locked { filter: grayscale(1); opacity: 0.5; pointer-events: none; background: rgba(15, 23, 42, 0.3); border: 1px dashed rgba(71, 85, 105, 0.3); }
-        
         .task-active { background: rgba(30, 41, 59, 0.95); transform: translateY(-2px); border-color: rgba(96, 165, 250, 0.5); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15); }
         .task-done { background: rgba(6, 78, 59, 0.2); border-color: rgba(34, 197, 94, 0.4); opacity: 1; }
         
-        /* Inputs */
         input[type=range] { -webkit-appearance: none; background: transparent; cursor: pointer; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #f8fafc; cursor: pointer; margin-top: -10px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.1s; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px; }
         
-        /* Themes */
         .theme-fire { --accent: #ef4444; --bg-glow: rgba(239, 68, 68, 0.15); }
         .theme-water { --accent: #3b82f6; --bg-glow: rgba(59, 130, 246, 0.15); }
         .theme-air { --accent: #fbbf24; --bg-glow: rgba(251, 191, 36, 0.15); }
         .theme-earth { --accent: #22c55e; --bg-glow: rgba(34, 197, 94, 0.15); }
+        
+        /* [新增] 神秘模式樣式 */
+        .theme-secret { --accent: #94a3b8; --bg-glow: rgba(148, 163, 184, 0.1); } 
+
         .beacon-border { border-color: var(--accent) !important; box-shadow: 0 0 15px var(--bg-glow); }
         .beacon-text { color: var(--accent) !important; }
         .beacon-bg { background-color: var(--bg-glow) !important; }
@@ -79,7 +76,7 @@
             <div class="relative z-10 text-center">
                 <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl text-white shadow-lg"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1 class="text-3xl font-extrabold text-white mb-2">Student</h1>
-                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.41 (Stable)</p>
+                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.6 (Mystery)</p>
                 <div class="space-y-4">
                     <div><label class="text-[10px] font-bold text-slate-500 uppercase">Session ID</label><input v-model="form.sessionId" class="w-full p-4 bg-slate-800 border border-slate-600 rounded-xl font-mono font-bold text-center text-xl text-white outline-none focus:border-blue-500 uppercase placeholder:text-slate-600" placeholder="教室代碼"></div>
                     <button @click="enterRoom" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/30 disabled:opacity-50 flex justify-center items-center gap-2">
@@ -125,9 +122,14 @@
         <div class="w-full max-w-sm glass-panel rounded-3xl p-6 relative animate-fade-in" :class="getBeaconClass(claimingUser.profile?.Zodiac)">
             <button @click="claimingUser=null" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-8 mt-2">
-                <div class="w-20 h-20 mx-auto rounded-full beacon-bg flex items-center justify-center text-4xl beacon-text mb-4 border-2 beacon-border animate-pulse-slow">{{ getZodiacIcon(claimingUser.profile?.Zodiac) }}</div>
+                <div class="w-20 h-20 mx-auto rounded-full beacon-bg flex items-center justify-center text-4xl beacon-text mb-4 border-2 beacon-border animate-pulse-slow">
+                    {{ isGroupRevealed ? getZodiacIcon(claimingUser.profile?.Zodiac) : '❓' }}
+                </div>
                 <h3 class="text-2xl font-bold text-white">{{ claimingUser.profile?.Name }}</h3>
-                <p class="text-sm text-slate-400 font-mono mt-1">{{ claimingUser.profile?.StudentId }}</p>
+                <p class="text-sm text-slate-400 font-mono mt-1">
+                    {{ claimingUser.profile?.StudentId }}
+                    <span v-if="isGroupRevealed"> | {{ claimingUser.profile?.Zodiac }}</span>
+                </p>
             </div>
             <div class="space-y-4">
                 <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
@@ -145,13 +147,17 @@
         <nav class="glass-panel border-b border-white/10 h-16 flex-none relative z-50">
             <div class="container mx-auto px-4 h-full flex justify-between items-center max-w-xl">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg border beacon-border beacon-bg beacon-text">{{ myProfile.zodiac?.icon }}</div>
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-lg border beacon-border beacon-bg beacon-text">
+                        {{ getCurrentIcon() }}
+                    </div>
                     <div>
                         <div class="font-bold text-white text-sm">{{ myProfile.name }}</div>
                         <div class="flex items-center gap-2">
                             <div class="text-[10px] text-slate-300 font-mono" v-if="myProfile.studentId">{{ myProfile.studentId }}</div>
                             <div class="w-px h-2 bg-slate-500/50"></div>
-                            <div class="text-[10px] beacon-text font-bold font-mono uppercase">Online</div>
+                            <div class="text-[10px] beacon-text font-bold font-mono uppercase">
+                                {{ isGroupRevealed ? myProfile.zodiac?.label : 'Waiting...' }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -234,6 +240,25 @@
                 <div v-if="globalState.config?.enableGroupB">
                     <div class="text-[10px] font-bold text-slate-500 uppercase mb-3 mt-8 pl-1 tracking-widest border-t border-slate-800 pt-6">Group B: 專案實作 (Output)</div>
                     
+                    <div v-if="globalState.config?.assignmentType === 'group'" 
+                         class="task-card p-5 rounded-2xl relative overflow-hidden mb-4 bg-slate-800/30 border-l-4 border-amber-500/50" 
+                         :class="isUnlocked('assignment') ? '' : 'task-locked'">
+                        <div class="flex gap-4 items-center relative z-10">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 bg-amber-900/20 text-amber-500">
+                                <i class="fa-solid fa-comments"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-slate-100 text-base">Group Discussion (分組討論)</h3>
+                                <p class="text-xs text-slate-400 mt-1">
+                                    您是 <span class="text-amber-400 font-bold">[{{ isGroupRevealed ? myProfile.zodiac?.label : 'Wait...' }}]</span> 組，點擊進入討論區。
+                                </p>
+                            </div>
+                            <button @click="openLink('discussion')" class="shrink-0 bg-amber-600 hover:bg-amber-500 text-white px-4 py-3 rounded-xl text-sm font-bold transition shadow-lg flex items-center gap-2">
+                                進入討論 <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="task-card p-5 rounded-2xl relative overflow-hidden mb-4 bg-slate-800/30" :class="getTaskClass('assignment')">
                         <div class="flex gap-4 items-start relative z-10">
                             <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all bg-slate-800 text-slate-600" :class="{'beacon-bg beacon-text': myTasks.assignment.done}">
@@ -314,7 +339,6 @@ const db = getDatabase(app);
 
 const sanitize = (str) => str ? str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) : '';
 const getZodiacIcon = (label) => CONFIG.ZODIAC.find(z => z.label === label)?.icon || '👤';
-const getBeaconClass = (label) => { const z = CONFIG.ZODIAC.find(x => x.label === label); return z ? `theme-${z.element}` : 'theme-earth'; };
 
 function useSound() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -360,10 +384,7 @@ function useRoom(sessionId, myUid) {
 }
 
 function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
-    const myTasks = reactive({ 
-        calibration: { done: false, confidence: 3 }, notebook: { done: false, started: false }, slido: { done: false, started: false }, 
-        forms: { done: false, started: false }, assignment: { done: false, started: false }, gallery: { done: false, started: false }
-    });
+    const myTasks = reactive({ calibration: { done: false, confidence: 3 }, notebook: { done: false, started: false }, slido: { done: false, started: false }, forms: { done: false, started: false }, assignment: { done: false, started: false }, gallery: { done: false, started: false } });
     const tempCalibration = reactive({ confidence: 3 });
     const tempRating = ref(3);
     const tempFeedback = ref('');
@@ -380,90 +401,62 @@ function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
         });
     };
 
-    const assignmentMeta = computed(() => {
-        const type = globalState.config?.assignmentType || 'individual';
-        return type === 'group' 
-            ? { title: 'Group Project (分組報告)', desc: '組長上傳，組員確認。', icon: 'fa-solid fa-users-viewfinder' }
-            : { title: 'Individual Work (個人作業)', desc: '請獨立完成並上傳。', icon: 'fa-solid fa-user-pen' };
-    });
+    const assignmentMeta = computed(() => { const type = globalState.config?.assignmentType || 'individual'; return type === 'group' ? { title: 'Group Project (分組報告)', desc: '組長上傳，組員確認。', icon: 'fa-solid fa-users-viewfinder' } : { title: 'Individual Work (個人作業)', desc: '請獨立完成並上傳。', icon: 'fa-solid fa-user-pen' }; });
 
     const submitCalibration = () => {
         if (!myUid.value) { addToast("資料同步中，請稍後再試", "error"); return; }
         const now = Date.now();
-        const updates = { 
-            done: true, 
-            confidence: tempCalibration.confidence, 
-            endTime: now, 
-            startTime: myTasks.calibration.startTime || (now - 6000), 
-            duration: 6 
-        };
-        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/calibration`), updates)
-            .then(() => playSFX('success'))
-            .catch(e => addToast("校準失敗: " + e.message, "error"));
+        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/calibration`), { done: true, confidence: tempCalibration.confidence, endTime: now, startTime: myTasks.calibration.startTime || (now - 6000), duration: 6 }).then(() => playSFX('success')).catch(e => addToast("校準失敗: " + e.message, "error"));
     };
 
     const markDone = (k) => {
         if (!myUid.value) return;
-        if (k === 'assignment' && globalState.config?.assignmentType === 'group') {
-            if (!confirm("【誠信確認】\n\n我確認我已參與本組討論，並對產出有所貢獻。\n\n(系統將記錄此確認操作)")) return;
-        }
-
-        const now = Date.now();
-        let startTime = myTasks[k].startTime || (now - 10000); 
-        let duration = Math.round((now - startTime) / 1000);
-        
+        if (k === 'assignment' && globalState.config?.assignmentType === 'group') { if (!confirm("【誠信確認】\n\n我確認我已參與本組討論，並對產出有所貢獻。\n\n(系統將記錄此確認操作)")) return; }
+        const now = Date.now(); let startTime = myTasks[k].startTime || (now - 10000); let duration = Math.round((now - startTime) / 1000);
         const updates = { done: true, endTime: now, duration, startTime };
         if (k === 'assignment') updates.type = globalState.config?.assignmentType || 'individual';
-
-        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), updates)
-        .then(() => playSFX('success')).catch(e => addToast("失敗: " + e.message, "error"));
+        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), updates).then(() => playSFX('success')).catch(e => addToast("失敗: " + e.message, "error"));
     };
 
     const isUnlocked = (k) => {
         if (k === 'calibration') return true; 
-
         if (!myTasks.calibration.done) return false;
-        
-        const pA = globalState.phaseA || 'waiting';
-        const pB = globalState.phaseB || 'waiting';
-
+        const pA = globalState.phaseA || 'waiting'; const pB = globalState.phaseB || 'waiting';
         if (k === 'notebook') return pA === 'warmup' || pA === 'main_open';
         if (k === 'slido') return pA === 'interact' || pA === 'main_open';
         if (k === 'forms') return pA === 'quiz' || pA === 'main_open';
-        
         if (k === 'assignment') return pB === 'submission_open' || pB === 'final_show';
         if (k === 'gallery') return pB === 'gallery_open' || pB === 'final_show';
         return false;
     };
-
     const groupADone = computed(() => myTasks.notebook.done && myTasks.slido.done && myTasks.forms.done);
+    const submitDebrief = () => { if (!myUid.value) return; if(tempFeedback.value.length < 5) return addToast("請多寫一點心得", "error"); update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`), { rating: tempRating.value, feedback: sanitize(tempFeedback.value) }); isEditing.value = false; addToast("心得與評分已更新！", "success"); };
 
-    const submitDebrief = () => { 
-        if (!myUid.value) return;
-        if(tempFeedback.value.length < 5) return addToast("請多寫一點心得", "error");
-        
-        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`), { 
-            rating: tempRating.value,
-            feedback: sanitize(tempFeedback.value) 
-        });
-        isEditing.value = false;
-        addToast("心得與評分已更新！", "success");
-    };
-
-    const openLink = (k) => {
+    // [修改] 按需讀取連結邏輯
+    const openLink = async (k) => {
         playSFX('click');
-        if(myUid.value && !myTasks[k].started) {
-            update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { started: true, startTime: Date.now() });
+        if (k === 'discussion') {
+            if (!myProfile.zodiac) { addToast("無法識別您的生肖身分", "error"); return; }
+            const zodiacKey = myProfile.zodiac.label.charAt(0);
+            addToast(`正在取得 [${zodiacKey}] 組連結...`, "info");
+            try {
+                const snapshot = await get(dbRef(db, `classrooms/${sessionId.value}/groupLinks/${zodiacKey}`));
+                if (snapshot.exists()) {
+                    const url = snapshot.val();
+                    if(myUid.value) update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/assignment`), { started: true, startTime: Date.now() });
+                    window.open(url, '_blank');
+                } else { addToast("老師尚未設定分組連結", "error"); }
+            } catch (e) { console.error(e); addToast("讀取失敗，請檢查網路", "error"); }
+            return;
         }
+        if(myUid.value && !myTasks[k].started) { update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { started: true, startTime: Date.now() }); }
         if(globalState.links?.[k]) window.open(globalState.links[k], '_blank');
     };
-
     return { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, markDone, isUnlocked, isEditing, groupADone, assignmentMeta, submitCalibration, submitDebrief, openLink };
 }
 
 function useIdentity(sessionId, addToast, changeView, playSFX, globalState) {
     const loading = ref(false); const claimingUser = ref(null); const myProfile = reactive({ uid: '', name: '', zodiac: null, studentId: '' });
-    
     const searchStudent = async (sid) => {
         if(!sid) return addToast("請輸入學號", "error");
         loading.value = true;
@@ -471,52 +464,30 @@ function useIdentity(sessionId, addToast, changeView, playSFX, globalState) {
               if(s.exists()) { playSFX('click'); claimingUser.value = { uid: sid.trim().toUpperCase(), ...s.val() }; } 
               else addToast("無此學號", "error"); } catch(e){ console.error(e); } finally { loading.value = false; }
     };
-    
     const executeClaim = async (pin) => {
         if(!pin) return false; loading.value = true;
         try { 
-            const t = crypto.randomUUID();
-            const targetUid = claimingUser.value.uid;
+            const t = crypto.randomUUID(); const targetUid = claimingUser.value.uid;
             await update(dbRef(db, `classrooms/${sessionId.value}/students/${targetUid}/auth`), { isActive: true, token: t, pin });
-            
             const userData = { uid: targetUid, token: t, name: claimingUser.value.profile.Name, zodiac: claimingUser.value.profile.Zodiac, studentId: claimingUser.value.profile.StudentId };
             localStorage.setItem('zodiac_identity', JSON.stringify(userData));
-            
-            Object.assign(myProfile, userData);
-            myProfile.zodiac = CONFIG.ZODIAC.find(z=>z.label===userData.zodiac);
-            
-            loading.value = false;
-            return true;
+            Object.assign(myProfile, userData); myProfile.zodiac = CONFIG.ZODIAC.find(z=>z.label===userData.zodiac);
+            loading.value = false; return true;
         } catch(e) { addToast("錯誤: " + e.message, "error"); loading.value = false; return false; }
     };
-
     const attemptAutoLogin = async () => {
         const stored = localStorage.getItem('zodiac_identity');
         if(!stored) { changeView('roster'); return false; }
-        
         loading.value = true;
         try {
             const local = JSON.parse(stored);
             const s = await get(dbRef(db, `classrooms/${sessionId.value}/students/${local.uid}/auth`));
-            
             if(s.exists() && s.val().token === local.token) {
-                Object.assign(myProfile, local);
-                myProfile.zodiac = CONFIG.ZODIAC.find(z=>z.label===local.zodiac);
+                Object.assign(myProfile, local); myProfile.zodiac = CONFIG.ZODIAC.find(z=>z.label===local.zodiac);
                 update(dbRef(db, `classrooms/${sessionId.value}/students/${local.uid}/auth`), { isActive: true });
-                changeView('dashboard');
-                loading.value = false;
-                return true; 
-            } else { 
-                localStorage.removeItem('zodiac_identity'); 
-                changeView('roster'); 
-                loading.value = false;
-                return false; 
-            }
-        } catch(e) { 
-            changeView('roster'); 
-            loading.value = false;
-            return false; 
-        }
+                changeView('dashboard'); loading.value = false; return true; 
+            } else { localStorage.removeItem('zodiac_identity'); changeView('roster'); loading.value = false; return false; }
+        } catch(e) { changeView('roster'); loading.value = false; return false; }
     };
     return { loading, claimingUser, myProfile, searchStudent, executeClaim, attemptAutoLogin, logout: ()=>{ localStorage.removeItem('zodiac_identity'); location.reload(); } };
 }
@@ -535,27 +506,14 @@ createApp({
         const myUidRef = computed(()=>myProfile.uid);
         
         const { isOnline, globalState, initConnection, startHeartbeat, initRoomSync } = useRoom(sessionRef, myUidRef);
-        
-        const { loading, claimingUser, myProfile: idProfile, executeClaim, attemptAutoLogin, searchStudent, logout } 
-              = useIdentity(sessionRef, addToast, (v)=>viewState.value=v, playSFX, globalState);
-        
-        watch(idProfile, (newP) => {
-            if(newP) Object.assign(myProfile, newP);
-        });
+        const { loading, claimingUser, myProfile: idProfile, executeClaim, attemptAutoLogin, searchStudent, logout } = useIdentity(sessionRef, addToast, (v)=>viewState.value=v, playSFX, globalState);
+        watch(idProfile, (newP) => { if(newP) Object.assign(myProfile, newP); });
 
-        const { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, markDone, isUnlocked, isEditing, groupADone, assignmentMeta, submitCalibration, submitDebrief, openLink } 
-              = useTasks(sessionRef, myUidRef, globalState, myProfile, addToast, playSFX);
+        const { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, markDone, isUnlocked, isEditing, groupADone, assignmentMeta, submitCalibration, submitDebrief, openLink } = useTasks(sessionRef, myUidRef, globalState, myProfile, addToast, playSFX);
 
         onMounted(() => {
             const pid = new URLSearchParams(window.location.search).get('id');
-            if(pid) { 
-                form.sessionId = pid; 
-                setTimeout(() => {
-                    attemptAutoLogin().then((success) => { 
-                        if(success) { initRoomSync(); initTaskSync(); startHeartbeat(); }
-                    });
-                }, 500); 
-            }
+            if(pid) { form.sessionId = pid; setTimeout(() => { attemptAutoLogin().then((success) => { if(success) { initRoomSync(); initTaskSync(); startHeartbeat(); } }); }, 500); }
             initConnection();
         });
 
@@ -563,19 +521,13 @@ createApp({
             if(!form.sessionId) return addToast("請輸入代碼", "error");
             playSFX('click');
             const success = await attemptAutoLogin();
-            if(success) {
-                initRoomSync(); initTaskSync(); startHeartbeat();
-            }
+            if(success) { initRoomSync(); initTaskSync(); startHeartbeat(); }
         };
         
         const executeAtomicClaim = async () => {
             playSFX('click');
             const success = await executeClaim(form.pin);
-            if(success) {
-                initRoomSync(); initTaskSync(); startHeartbeat();
-                claimingUser.value = null; 
-                viewState.value = 'dashboard';
-            }
+            if(success) { initRoomSync(); initTaskSync(); startHeartbeat(); claimingUser.value = null; viewState.value = 'dashboard'; }
         };
 
         const getTaskClass = (k) => {
@@ -585,12 +537,18 @@ createApp({
             return 'bg-slate-800/50 border-transparent'; 
         };
 
+        // --- [新增] 揭曉邏輯 ---
+        const isGroupRevealed = computed(() => globalState.config?.enableGroupB === true);
+        const getBeaconClass = (label) => { if (!isGroupRevealed.value) return 'theme-secret'; const z = CONFIG.ZODIAC.find(x => x.label === label); return z ? `theme-${z.element}` : 'theme-earth'; };
+        const getCurrentIcon = () => { if (!isGroupRevealed.value) return '❓'; return myProfile.zodiac?.icon || '👤'; };
+
         return { form, viewState, loading, toasts, searchQuery, isOnline, claimingUser, myProfile: computed(()=>myProfile), globalState,
                  enterRoom, handleSearch: ()=>searchStudent(searchQuery.value), executeAtomicClaim, logout,
                  myTasks, mainTasks: CONFIG.TASKS_META, assignmentMeta, tempCalibration, tempRating, tempFeedback,
                  getTaskClass, isUnlocked, groupADone, isEditing,
                  submitCalibration, submitDebrief, openLink, markDone,
-                 getZodiacIcon, getBeaconClass: (l) => { const z=CONFIG.ZODIAC.find(x=>x.label===l); return z?`theme-${z.element}`:'theme-earth'; },
+                 getZodiacIcon, 
+                 getBeaconClass, isGroupRevealed, getCurrentIcon, // <--- 導出新邏輯
                  globalProgress: computed(()=>globalState.globalProgress)
         };
     }

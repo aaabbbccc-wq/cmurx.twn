@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Student Portal | v4.33</title>
+    <title>Student Portal | v4.41 Final Stable</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3.4.19/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,15 +23,25 @@
         body { font-family: 'Inter', sans-serif; background: #0f172a; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; color: #f8fafc; }
         .h-screen-dvh { height: 100vh; height: 100dvh; }
         [v-cloak] { display: none !important; }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
         .offline-mask { backdrop-filter: blur(5px); background: rgba(15, 23, 42, 0.9); }
-        .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(148, 163, 184, 0.1); }
-        .task-locked { filter: grayscale(1); opacity: 0.6; pointer-events: none; background: rgba(15, 23, 42, 0.5); border-style: dashed; }
-        .task-active { background: rgba(30, 41, 59, 0.9); transform: translateY(-2px); border-color: rgba(96, 165, 250, 0.5); }
-        .task-done { background: rgba(6, 78, 59, 0.3); border-color: rgba(34, 197, 94, 0.5); opacity: 0.9; }
-        input[type=range] { -webkit-appearance: none; background: transparent; }
+        
+        /* Task Card Styles */
+        .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; background: rgba(30, 41, 59, 0.4); }
+        
+        /* Locked State: pointer-events: none is what caused the slider issue. 
+           We fixed this in JS logic, but keeping the style is correct for ACTUALLY locked tasks. */
+        .task-locked { filter: grayscale(1); opacity: 0.5; pointer-events: none; background: rgba(15, 23, 42, 0.3); border: 1px dashed rgba(71, 85, 105, 0.3); }
+        
+        .task-active { background: rgba(30, 41, 59, 0.95); transform: translateY(-2px); border-color: rgba(96, 165, 250, 0.5); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15); }
+        .task-done { background: rgba(6, 78, 59, 0.2); border-color: rgba(34, 197, 94, 0.4); opacity: 1; }
+        
+        /* Inputs */
+        input[type=range] { -webkit-appearance: none; background: transparent; cursor: pointer; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #f8fafc; cursor: pointer; margin-top: -10px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: transform 0.1s; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #475569; border-radius: 2px; }
+        
+        /* Themes */
         .theme-fire { --accent: #ef4444; --bg-glow: rgba(239, 68, 68, 0.15); }
         .theme-water { --accent: #3b82f6; --bg-glow: rgba(59, 130, 246, 0.15); }
         .theme-air { --accent: #fbbf24; --bg-glow: rgba(251, 191, 36, 0.15); }
@@ -69,9 +79,9 @@
             <div class="relative z-10 text-center">
                 <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl text-white shadow-lg"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1 class="text-3xl font-extrabold text-white mb-2">Student</h1>
-                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.33</p>
+                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.41 (Stable)</p>
                 <div class="space-y-4">
-                    <div><label class="text-[10px] font-bold text-slate-500 uppercase">Session ID (教室代碼)</label><input v-model="form.sessionId" class="w-full p-4 bg-slate-800 border border-slate-600 rounded-xl font-mono font-bold text-center text-xl text-white outline-none focus:border-blue-500 uppercase placeholder:text-slate-600" placeholder="請輸入代碼"></div>
+                    <div><label class="text-[10px] font-bold text-slate-500 uppercase">Session ID</label><input v-model="form.sessionId" class="w-full p-4 bg-slate-800 border border-slate-600 rounded-xl font-mono font-bold text-center text-xl text-white outline-none focus:border-blue-500 uppercase placeholder:text-slate-600" placeholder="教室代碼"></div>
                     <button @click="enterRoom" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/30 disabled:opacity-50 flex justify-center items-center gap-2">
                         <span v-if="loading"><i class="fa-solid fa-circle-notch animate-spin"></i> 連線中...</span>
                         <span v-else>進入教室 <i class="fa-solid fa-arrow-right"></i></span>
@@ -87,40 +97,25 @@
                 <i class="fa-solid fa-lock text-3xl text-red-500"></i>
             </div>
             <h2 class="text-xl font-bold text-white mb-2">名單已鎖定</h2>
-            <p class="text-slate-400">加退選已結束，目前禁止新設備綁定。<br>若您是本班學生且更換了裝置，<br>請舉手請老師協助解鎖。</p>
-            <button @click="attemptAutoLogin" class="mt-8 text-blue-400 hover:text-white underline text-sm">嘗試重新連線</button>
+            <p class="text-slate-400">請舉手請老師協助解鎖。</p>
+            <button @click="attemptAutoLogin" class="mt-8 text-blue-400 hover:text-white underline text-sm">重新嘗試</button>
         </div>
         <div v-else class="flex-1 flex flex-col items-center justify-center p-6">
             <div class="w-full max-w-sm glass-panel p-8 rounded-3xl shadow-2xl relative border-t border-slate-600">
                 <button @click="viewState='entry'" class="absolute top-4 left-4 text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i></button>
-                <div class="absolute top-4 right-4 text-[10px] font-mono font-bold text-slate-500 border border-slate-700 px-2 py-1 rounded bg-slate-900/50 tracking-widest">
-                    {{ form.sessionId }}
-                </div>
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-white">身份驗證</h2>
-                    <p class="text-sm text-slate-400 mt-1">請輸入您的學號以查找資料</p>
+                    <p class="text-sm text-slate-400 mt-1">Direct Lookup</p>
                 </div>
-                
                 <div class="space-y-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">Student ID (學號)</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-id-card absolute left-4 top-4 text-slate-500"></i>
-                            <input v-model="searchQuery" 
-                                   @keyup.enter="handleSearch"
-                                   class="w-full pl-12 p-4 bg-slate-800 border border-slate-600 rounded-xl font-mono font-bold text-lg text-white outline-none focus:border-blue-500 placeholder:text-slate-700 uppercase" 
-                                   placeholder="例如: S123456">
-                        </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-id-card absolute left-4 top-4 text-slate-500"></i>
+                        <input v-model="searchQuery" @keyup.enter="handleSearch" class="w-full pl-12 p-4 bg-slate-800 border border-slate-600 rounded-xl font-mono font-bold text-lg text-white outline-none focus:border-blue-500 uppercase" placeholder="學號 (如 S12345)">
                     </div>
-
-                    <button @click="handleSearch" :disabled="loading || !searchQuery" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/30 disabled:opacity-50 flex justify-center items-center gap-2">
-                        <span v-if="loading"><i class="fa-solid fa-circle-notch animate-spin"></i> 搜尋中...</span>
+                    <button @click="handleSearch" :disabled="loading || !searchQuery" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold transition shadow-lg flex justify-center items-center gap-2">
+                        <span v-if="loading"><i class="fa-solid fa-circle-notch animate-spin"></i></span>
                         <span v-else>下一步 <i class="fa-solid fa-arrow-right"></i></span>
                     </button>
-                </div>
-                
-                <div class="mt-6 text-center">
-                    <p class="text-[10px] text-slate-600">Secure Direct Lookup</p>
                 </div>
             </div>
         </div>
@@ -130,18 +125,17 @@
         <div class="w-full max-w-sm glass-panel rounded-3xl p-6 relative animate-fade-in" :class="getBeaconClass(claimingUser.profile?.Zodiac)">
             <button @click="claimingUser=null" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center mb-8 mt-2">
-                <div class="w-20 h-20 mx-auto rounded-full beacon-bg flex items-center justify-center text-4xl beacon-text mb-4 border-2 beacon-border animate-pulse-slow shadow-[0_0_20px_rgba(255,255,255,0.1)]">{{ getZodiacIcon(claimingUser.profile?.Zodiac) }}</div>
+                <div class="w-20 h-20 mx-auto rounded-full beacon-bg flex items-center justify-center text-4xl beacon-text mb-4 border-2 beacon-border animate-pulse-slow">{{ getZodiacIcon(claimingUser.profile?.Zodiac) }}</div>
                 <h3 class="text-2xl font-bold text-white">{{ claimingUser.profile?.Name }}</h3>
                 <p class="text-sm text-slate-400 font-mono mt-1">{{ claimingUser.profile?.StudentId }}</p>
             </div>
             <div class="space-y-4">
                 <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
-                    <label class="text-[10px] font-bold text-slate-500 uppercase flex justify-between mb-2"><span>設定 4 位數 PIN 碼</span><i class="fa-solid fa-lock"></i></label>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase flex justify-between mb-2"><span>PIN Code</span><i class="fa-solid fa-lock"></i></label>
                     <input v-model="form.pin" type="tel" maxlength="4" class="w-full bg-transparent text-center text-3xl font-mono font-bold tracking-[0.5em] text-white outline-none placeholder:text-slate-700" placeholder="••••">
                 </div>
                 <button @click="executeAtomicClaim" :disabled="loading" class="w-full bg-white text-slate-900 py-4 rounded-xl font-bold shadow-lg transition active:scale-95 disabled:opacity-50 text-base">
-                    <span v-if="loading"><i class="fa-solid fa-circle-notch animate-spin"></i> 綁定中...</span>
-                    <span v-else>確認身份</span>
+                    確認身份
                 </button>
             </div>
         </div>
@@ -156,7 +150,7 @@
                         <div class="font-bold text-white text-sm">{{ myProfile.name }}</div>
                         <div class="flex items-center gap-2">
                             <div class="text-[10px] text-slate-300 font-mono" v-if="myProfile.studentId">{{ myProfile.studentId }}</div>
-                            <div class="w-px h-2 bg-slate-500/50" v-if="myProfile.studentId"></div>
+                            <div class="w-px h-2 bg-slate-500/50"></div>
                             <div class="text-[10px] beacon-text font-bold font-mono uppercase">Online</div>
                         </div>
                     </div>
@@ -174,11 +168,11 @@
         <main class="flex-1 h-0 overflow-y-auto p-4 pb-32 scroll-smooth relative">
             <div class="container mx-auto max-w-md space-y-5">
                 
-                <div class="task-card p-5 rounded-2xl relative overflow-hidden" :class="myTasks.calibration.done ? 'task-done beacon-border' : 'bg-slate-800/80'">
+                <div class="task-card p-5 rounded-2xl relative overflow-hidden bg-slate-800/50" :class="getTaskClass('calibration')">
                     <div class="flex gap-4 items-start relative z-10">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 transition-colors" :class="myTasks.calibration.done ? 'beacon-bg beacon-text' : 'bg-slate-700 text-slate-400'"><i class="fa-solid fa-scale-balanced"></i></div>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 transition-colors bg-slate-700 text-slate-400" :class="{'beacon-bg beacon-text': myTasks.calibration.done}"><i class="fa-solid fa-scale-balanced"></i></div>
                         <div class="flex-grow">
-                            <h3 class="font-bold text-white text-sm">Task 0: 學習狀態校準</h3>
+                            <h3 class="font-bold text-white text-sm">暖身校準</h3>
                             <div v-if="!myTasks.calibration.done" class="space-y-4 mt-3 p-4 bg-slate-900/80 rounded-xl border border-slate-700">
                                 <div class="space-y-2">
                                     <div class="flex justify-between text-xs font-bold text-slate-400 uppercase"><span>您對本主題的熟悉度</span><span class="beacon-text text-base">{{ tempCalibration.confidence }}/5</span></div>
@@ -186,62 +180,100 @@
                                 </div>
                                 <button @click="submitCalibration" class="w-full bg-white text-slate-900 py-3 rounded-lg text-xs font-bold hover:bg-slate-200 transition">提交並解鎖任務</button>
                             </div>
-                            <div v-else class="text-xs font-bold beacon-text uppercase flex items-center gap-1 mt-2"><i class="fa-solid fa-check-circle"></i> 已設定基準: Level {{ myTasks.calibration.confidence }}</div>
+                            <div v-else class="text-xs font-bold beacon-text uppercase flex items-center gap-1 mt-2"><i class="fa-solid fa-check-circle"></i> 已完成設定 (Level {{ myTasks.calibration.confidence }})</div>
                         </div>
                     </div>
                 </div>
 
-                <div v-for="(task, key, idx) in mainTasks" :key="key" class="task-card p-5 rounded-2xl relative overflow-hidden" :class="getTaskClass(key)">
-                    <div class="absolute right-2 top-2 opacity-5 text-6xl pointer-events-none transform rotate-12"><i :class="task.icon"></i></div>
-                    <div class="flex gap-4 items-start relative z-10">
-                        <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all duration-500 border border-transparent" :class="myTasks[key].done ? 'beacon-bg beacon-text shadow-lg scale-110 border-white/20' : (myTasks[key].started ? 'bg-blue-900/30 text-blue-400 border-blue-500/30' : 'bg-slate-800 text-slate-600')">
-                            <i :class="myTasks[key].done ? 'fa-solid fa-check' : task.icon"></i>
-                        </div>
-                        <div class="flex-grow">
-                            <div class="flex justify-between items-start"><h3 class="font-bold text-slate-100 text-base">{{ idx+1 }}. {{ task.title }}</h3></div>
-                            <p class="text-xs text-slate-400 mb-4 mt-1 leading-relaxed">{{ task.desc }}</p>
-                            <div v-if="isUnlocked(key)" class="flex flex-col gap-2 mt-2">
-                                <button @click="openLink(key)" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition active:scale-95 border border-slate-600 hover:border-white text-slate-200 hover:bg-slate-800">
-                                    <i v-if="myTasks[key].done" class="fa-solid fa-rotate-right"></i>
-                                    <i v-else-if="key === 'assignment'" class="fa-brands fa-google-drive"></i>
-                                    <i v-else class="fa-solid fa-arrow-up-right-from-square"></i>
-                                    <span>
-                                        {{ myTasks[key].done ? '再次複習' : (key==='assignment' ? '前往上傳心得 (Google Form)' : '開啟教材/連結') }}
-                                    </span>
-                                </button>
-                                <button v-if="myTasks[key].started && !myTasks[key].done" @click="markDone(key)" class="w-full bg-emerald-600 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-emerald-500 transition active:scale-95 flex justify-center items-center gap-2 shadow-lg animate-pulse-slow">
-                                    <i class="fa-regular fa-square-check text-lg"></i> {{ key==='assignment' ? '我已上傳完畢，標記完成' : '標記為已完成' }}
-                                </button>
-                            </div>
-                            <div v-else class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900/50 text-slate-500 text-[10px] rounded-lg font-bold mt-2 border border-slate-700">
-                                <i class="fa-solid fa-lock"></i> 等待老師開放 (WAITING)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-if="allTasksDone" class="bg-slate-800/90 p-6 rounded-2xl border border-white/10 mt-8 animate-fade-in relative overflow-hidden beacon-border shadow-2xl">
-                    <h3 class="font-bold text-white mb-4 flex items-center gap-2 relative z-10 text-lg"><i class="fa-solid fa-flag-checkered beacon-text"></i> 任務總結 (Mission Debrief)</h3>
+                <div v-if="globalState.config?.enableGroupA">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase mb-3 mt-2 pl-1 tracking-widest">Group A: 學習核心 (Input)</div>
                     
-                    <div v-if="!myProfile.rating || isEditing" class="space-y-6 relative z-10">
-                        <div class="space-y-3">
-                            <div class="flex justify-between text-xs font-bold text-slate-400 uppercase"><span>學習成效自評</span><span class="beacon-text text-xl">{{ tempRating }}</span></div>
-                            <input type="range" v-model.number="tempRating" min="1" max="5" class="w-full accent-green-500">
+                    <div v-for="key in ['notebook', 'slido', 'forms']" :key="key" class="task-card p-5 rounded-2xl relative overflow-hidden mb-4 bg-slate-800/30" :class="getTaskClass(key)">
+                        <div class="flex gap-4 items-start relative z-10">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all duration-500 border border-transparent" 
+                                 :class="myTasks[key].done ? 'beacon-bg beacon-text shadow-lg scale-110 border-white/20' : (myTasks[key].started ? 'bg-blue-900/30 text-blue-400 border-blue-500/30' : 'bg-slate-800 text-slate-600')">
+                                <i :class="myTasks[key].done ? 'fa-solid fa-check' : mainTasks[key].icon"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-slate-100 text-base">{{ mainTasks[key].title }}</h3>
+                                <p class="text-xs text-slate-400 mb-4 mt-1 leading-relaxed">{{ mainTasks[key].desc }}</p>
+                                
+                                <div v-if="isUnlocked(key)" class="flex flex-col gap-2 mt-2">
+                                    <button @click="openLink(key)" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition active:scale-95 border border-slate-600 hover:border-white text-slate-200 hover:bg-slate-800">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> {{ myTasks[key].done ? '再次複習' : '開啟連結' }}
+                                    </button>
+                                    <button v-if="myTasks[key].started && !myTasks[key].done" @click="markDone(key)" class="w-full bg-white text-slate-900 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-200 transition active:scale-95 flex justify-center items-center gap-2 shadow-lg animate-pulse-slow">
+                                        <i class="fa-regular fa-square-check text-lg"></i> 標記完成
+                                    </button>
+                                </div>
+                                <div v-else class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900/50 text-slate-500 text-[10px] rounded-lg font-bold mt-2 border border-slate-700">
+                                    <i class="fa-solid fa-lock"></i> 等待開放
+                                </div>
+                            </div>
                         </div>
-                        <textarea v-model="tempFeedback" class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-sm text-white focus:border-white outline-none resize-none min-h-[100px]" placeholder="請簡短寫下您的心得或反思..."></textarea>
-                        <button @click="submitDebrief" class="w-full bg-white text-slate-900 py-4 rounded-xl font-bold hover:scale-[1.02] transition shadow-xl text-base">
-                            {{ myProfile.rating ? '更新心得 (Update)' : '提交並結束任務' }}
-                        </button>
-                        <button v-if="myProfile.rating" @click="isEditing = false" class="w-full text-slate-400 text-xs py-2 hover:text-white transition">取消修改</button>
                     </div>
 
-                    <div v-else class="text-center py-8 relative z-10">
-                        <div class="text-5xl mb-4">🎉</div>
-                        <div class="font-bold text-slate-200 text-xl">MISSION ACCOMPLISHED</div>
-                        <div class="text-xs text-slate-500 mt-2">資料已同步至指揮中心</div>
-                        <button @click="isEditing = true" class="mt-6 px-4 py-2 border border-slate-600 rounded-lg text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition flex items-center justify-center gap-2 mx-auto">
-                            <i class="fa-solid fa-pen-to-square"></i> 修改心得
-                        </button>
+                    <div v-if="groupADone" class="bg-slate-800/90 p-6 rounded-2xl border border-white/10 mt-2 mb-8 animate-fade-in relative overflow-hidden beacon-border shadow-2xl">
+                        <h3 class="font-bold text-white mb-4 flex items-center gap-2 relative z-10 text-lg"><i class="fa-solid fa-lightbulb beacon-text"></i> 學習反思 (Debrief)</h3>
+                        <div v-if="!myProfile.rating || isEditing" class="space-y-6 relative z-10">
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-xs font-bold text-slate-400 uppercase"><span>學習成效自評</span><span class="beacon-text text-xl">{{ tempRating }}</span></div>
+                                <input type="range" v-model.number="tempRating" min="1" max="5" class="w-full accent-green-500">
+                            </div>
+                            <textarea v-model="tempFeedback" class="w-full p-4 bg-slate-900/80 border border-slate-600 rounded-xl text-sm text-white focus:border-white outline-none resize-none min-h-[100px]" placeholder="思考一下：本單元最核心的概念是什麼？"></textarea>
+                            <button @click="submitDebrief" class="w-full bg-white text-slate-900 py-4 rounded-xl font-bold hover:scale-[1.02] transition shadow-xl text-base">提交反思</button>
+                        </div>
+                        <div v-else class="text-center py-6 relative z-10">
+                            <div class="text-3xl mb-2">✨</div>
+                            <div class="text-sm text-slate-300">反思已提交</div>
+                            <button @click="isEditing = true" class="mt-4 text-xs text-slate-500 underline">修改內容</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="globalState.config?.enableGroupB">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase mb-3 mt-8 pl-1 tracking-widest border-t border-slate-800 pt-6">Group B: 專案實作 (Output)</div>
+                    
+                    <div class="task-card p-5 rounded-2xl relative overflow-hidden mb-4 bg-slate-800/30" :class="getTaskClass('assignment')">
+                        <div class="flex gap-4 items-start relative z-10">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all bg-slate-800 text-slate-600" :class="{'beacon-bg beacon-text': myTasks.assignment.done}">
+                                <i :class="assignmentMeta.icon"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-slate-100 text-base">{{ assignmentMeta.title }}</h3>
+                                <p class="text-xs text-slate-400 mb-4 mt-1 leading-relaxed">{{ assignmentMeta.desc }}</p>
+                                <div v-if="isUnlocked('assignment')" class="flex flex-col gap-2">
+                                    <button @click="openLink('assignment')" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border border-slate-600 hover:border-white text-slate-200">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> 前往繳交
+                                    </button>
+                                    <button v-if="myTasks.assignment.started && !myTasks.assignment.done" @click="markDone('assignment')" class="w-full bg-amber-600 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-amber-500 transition shadow-lg animate-pulse-slow">
+                                        <i class="fa-solid fa-check-double"></i> 標記完成
+                                    </button>
+                                </div>
+                                <div v-else class="text-[10px] text-slate-500 font-bold border border-slate-700 px-2 py-1 rounded inline-block">🔒 尚未開放繳交</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="task-card p-5 rounded-2xl relative overflow-hidden bg-slate-800/30" :class="getTaskClass('gallery')">
+                         <div class="flex gap-4 items-start relative z-10">
+                            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all bg-slate-800 text-slate-600" :class="{'beacon-bg beacon-text': myTasks.gallery.done}">
+                                <i class="fa-solid fa-images"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-slate-100 text-base">Exhibition (作品賞析)</h3>
+                                <p class="text-xs text-slate-400 mb-4 mt-1 leading-relaxed">觀摩同學作品。</p>
+                                <div v-if="isUnlocked('gallery')" class="flex flex-col gap-2">
+                                    <button @click="openLink('gallery')" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold border border-slate-600 hover:border-white text-slate-200">
+                                        <i class="fa-solid fa-eye"></i> 進入展覽
+                                    </button>
+                                    <button v-if="myTasks.gallery.started && !myTasks.gallery.done" @click="markDone('gallery')" class="w-full bg-pink-600 text-white px-4 py-3 rounded-xl text-sm font-bold hover:bg-pink-500 transition shadow-lg animate-pulse-slow">
+                                        <i class="fa-solid fa-check"></i> 我已完成賞析
+                                    </button>
+                                </div>
+                                <div v-else class="text-[10px] text-slate-500 font-bold border border-slate-700 px-2 py-1 rounded inline-block">🔒 尚未開放展覽</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -263,8 +295,7 @@ const CONFIG = {
         projectId: "cmu-11402-pathophysiology",
         storageBucket: "cmu-11402-pathophysiology.firebasestorage.app",
         messagingSenderId: "367793212618",
-        appId: "1:367793212618:web:c11acedc50ce6fc3897833",
-        measurementId: "G-493SYB75VB"
+        appId: "1:367793212618:web:c11acedc50ce6fc3897833"
     },
     ZODIAC: [
         {label:'子鼠', icon:'⚡️', element:'air'}, {label:'丑牛', icon:'🧱', element:'earth'}, {label:'寅虎', icon:'🔥', element:'fire'}, {label:'卯兔', icon:'🧐', element:'water'},
@@ -274,194 +305,38 @@ const CONFIG = {
     TASKS_META: {
         notebook: { title: 'Gathering (知識獲取)', desc: '閱讀指定教材，並使用 AI 輔助整理重點。', icon: 'fa-solid fa-book-sparkles' },
         slido: { title: 'Briefing (互動提問)', desc: '進入 Slido 聊天室，參與投票或提出問題。', icon: 'fa-solid fa-users-rays' },
-        forms: { title: 'Assessment (成效檢核)', desc: '完成最終測驗，驗證今日學習成果。', icon: 'fa-solid fa-clipboard-check' },
-        assignment: { title: 'Report (心得繳交)', desc: '點擊開啟 Google 表單，填寫學號並上傳檔案 (Word/PDF/影像)。', icon: 'fa-brands fa-google-drive' }
+        forms: { title: 'Assessment (成效檢核)', desc: '完成最終測驗，驗證今日學習成果。', icon: 'fa-solid fa-clipboard-check' }
     }
 };
 
 const app = initializeApp(CONFIG.FIREBASE);
 const db = getDatabase(app);
 
-const sanitize = (str) => {
-    if (!str) return '';
-    return str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]);
-};
+const sanitize = (str) => str ? str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) : '';
 const getZodiacIcon = (label) => CONFIG.ZODIAC.find(z => z.label === label)?.icon || '👤';
 const getBeaconClass = (label) => { const z = CONFIG.ZODIAC.find(x => x.label === label); return z ? `theme-${z.element}` : 'theme-earth'; };
 
 function useSound() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const ctx = new AudioContext();
-
     const playTone = (freq, type, duration, vol = 0.1) => {
         if (ctx.state === 'suspended') ctx.resume();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        gain.gain.setValueAtTime(vol, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + duration);
+        osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(vol, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + duration);
     };
-
-    const playSFX = (type) => {
-        switch (type) {
-            case 'success':
-                playTone(800, 'sine', 0.1, 0.1);
-                setTimeout(() => playTone(1200, 'sine', 0.2, 0.1), 100);
-                break;
-            case 'error':
-                playTone(150, 'sawtooth', 0.3, 0.15);
-                setTimeout(() => playTone(100, 'sawtooth', 0.3, 0.15), 100);
-                break;
-            case 'ping':
-                playTone(1000, 'sine', 0.1, 0.05);
-                break;
-            case 'click':
-                playTone(400, 'triangle', 0.05, 0.05);
-                break;
-            case 'boot':
-                playTone(200, 'square', 0.1, 0.05);
-                setTimeout(() => playTone(400, 'square', 0.1, 0.05), 100);
-                setTimeout(() => playTone(800, 'square', 0.3, 0.05), 200);
-                break;
-        }
-    };
-    return { playSFX };
-}
-
-function useIdentity(sessionId, addToast, changeView, playSFX, globalState) {
-    const loading = ref(false);
-    const claimingUser = ref(null);
-    const myProfile = reactive({ name: '', zodiac: null, uid: '', token: '', rating: 0, studentId: '' });
-
-    const searchStudent = async (studentId) => {
-        if (!studentId) { addToast("請輸入學號", "error"); return; }
-        if (!sessionId.value) { addToast("教室代碼無效", "error"); return; }
-        
-        loading.value = true;
-        try {
-            const targetId = studentId.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            const userRef = dbRef(db, `classrooms/${sessionId.value}/students/${targetId}`);
-            
-            const snapshot = await get(userRef);
-            
-            if (snapshot.exists()) {
-                const userData = snapshot.val();
-                if (userData.auth && userData.auth.isActive) {
-                    addToast("⚠️ 注意：此帳號目前顯示為線上，繼續操作將強制登出舊裝置", "info");
-                }
-                playSFX('click');
-                claimingUser.value = { uid: targetId, ...userData };
-            } else {
-                addToast("找不到此學號，請確認輸入是否正確", "error");
-            }
-        } catch (e) {
-            console.error(e);
-            addToast("搜尋失敗: " + e.message, "error");
-        } finally {
-            loading.value = false;
-        }
-    };
-
-    const executeClaim = async (pin) => {
-        if(!pin || pin.length !== 4) { addToast("請輸入 4 位數 PIN 碼", "error"); return; }
-        
-        if (globalState.loginStatus === 'locked') {
-            addToast("⛔ 教室目前禁止入場 (LOCKED)", "error");
-            claimingUser.value = null; 
-            return;
-        }
-
-        loading.value = true;
-        const targetUid = claimingUser.value.uid;
-        const newDeviceToken = crypto.randomUUID();
-        
-        try {
-            const result = await runTransaction(dbRef(db, `classrooms/${sessionId.value}/students/${targetUid}/auth`), (curr) => {
-                return { 
-                    isActive: true, 
-                    pin, 
-                    token: newDeviceToken, 
-                    device: navigator.userAgent.slice(0, 30), 
-                    claimedAt: Date.now() 
-                };
-            });
-
-            if (result.committed) {
-                const p = claimingUser.value.profile;
-                const identity = { uid: targetUid, token: newDeviceToken, name: p.Name, zodiac: p.Zodiac, studentId: p.StudentId };
-                localStorage.setItem('zodiac_identity', JSON.stringify(identity));
-                myProfile.uid = targetUid; myProfile.token = newDeviceToken; myProfile.name = p.Name;
-                myProfile.studentId = p.StudentId;
-                myProfile.zodiac = CONFIG.ZODIAC.find(z => z.label === p.Zodiac);
-                
-                claimingUser.value = null;
-                playSFX('success');
-                changeView('dashboard');
-                return true; 
-            } else {
-                addToast("系統繁忙，請再試一次", "error");
-                claimingUser.value = null;
-                return false;
-            }
-        } catch(e) {
-            addToast("連線錯誤: "+e.message, "error");
-            return false;
-        } finally { loading.value = false; }
-    };
-
-    const attemptAutoLogin = async () => {
-        const stored = localStorage.getItem('zodiac_identity');
-        if(!stored) { changeView('roster'); return false; }
-        
-        loading.value = true;
-        try {
-            const localId = JSON.parse(stored);
-            const authSnap = await get(dbRef(db, `classrooms/${sessionId.value}/students/${localId.uid}/auth`));
-            
-            if(authSnap.exists() && authSnap.val().token === localId.token) {
-                update(dbRef(db, `classrooms/${sessionId.value}/students/${localId.uid}/auth`), { isActive: true });
-                
-                myProfile.uid = localId.uid; myProfile.token = localId.token; myProfile.name = localId.name;
-                myProfile.studentId = localId.studentId || '';
-                myProfile.zodiac = CONFIG.ZODIAC.find(z => z.label === localId.zodiac);
-                changeView('dashboard');
-                return true;
-            } else {
-                localStorage.removeItem('zodiac_identity');
-                addToast("您的身份已失效或被強制登出", "error");
-                changeView('roster');
-                return false;
-            }
-        } catch(e) { 
-            changeView('roster'); return false; 
-        } finally { loading.value = false; }
-    };
-
-    return { 
-        loading, claimingUser, myProfile, 
-        searchStudent, executeClaim, attemptAutoLogin,
-        logout: async () => { 
-            if(confirm("確定要登出嗎？這將解除與此身份的綁定。")) {
-                if(myProfile.uid && sessionId.value) {
-                    try {
-                        await update(dbRef(db, `classrooms/${sessionId.value}/students/${myProfile.uid}/auth`), { isActive: false, token: null });
-                    } catch(e) { console.error("Logout sync failed", e); }
-                }
-                localStorage.removeItem('zodiac_identity'); 
-                location.reload(); 
-            }
-        }
-    };
+    return { playSFX: (t) => {
+        if(t==='success') { playTone(800,'sine',0.1); setTimeout(()=>playTone(1200,'sine',0.2),100); }
+        else if(t==='error') { playTone(150,'sawtooth',0.3); setTimeout(()=>playTone(100,'sawtooth',0.3),100); }
+        else if(t==='click') playTone(400,'triangle',0.05,0.05);
+    }};
 }
 
 function useRoom(sessionId, myUid) {
     const isOnline = ref(navigator.onLine);
-    const globalState = reactive({ currentPhase: 'waiting', links: {}, globalProgress: 0, loginStatus: 'open' });
+    const globalState = reactive({ phaseA: 'waiting', phaseB: 'waiting', links: {}, globalProgress: 0, loginStatus: 'open', config: {} });
     
     const initConnection = () => {
         window.addEventListener('online', () => isOnline.value = true);
@@ -470,134 +345,180 @@ function useRoom(sessionId, myUid) {
     };
 
     const startHeartbeat = () => {
+        if (!myUid.value) return; 
         const userRef = dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`);
-        
-        onDisconnect(userRef).update({ 
-            status: 'offline',
-            'auth/isActive': false 
-        });
-
-        const sendPulse = () => {
-            if (navigator.onLine && document.visibilityState === 'visible' && myUid.value) {
-                update(userRef, { lastSeen: Date.now(), status: 'online' });
-            }
-        };
-
-        sendPulse();
-        const timer = setInterval(sendPulse, 10000);
+        onDisconnect(userRef).update({ status: 'offline', 'auth/isActive': false });
+        const sendPulse = () => { if (navigator.onLine && document.visibilityState === 'visible') update(userRef, { lastSeen: Date.now(), status: 'online' }); };
+        sendPulse(); setInterval(sendPulse, 10000);
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sendPulse(); });
-
-        return () => clearInterval(timer);
     };
 
     const initRoomSync = () => {
-        onValue(dbRef(db, `classrooms/${sessionId.value}/status`), (snap) => {
-            if(snap.exists()) Object.assign(globalState, snap.val());
-        });
+        onValue(dbRef(db, `classrooms/${sessionId.value}/status`), (snap) => { if(snap.exists()) Object.assign(globalState, snap.val()); });
     };
-
     return { isOnline, globalState, initConnection, startHeartbeat, initRoomSync };
 }
 
 function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
     const myTasks = reactive({ 
-        calibration: { done: false, confidence: 3 }, 
-        notebook: { done: false, started: false }, 
-        slido: { done: false, started: false }, 
-        forms: { done: false, started: false },
-        assignment: { done: false, started: false }
+        calibration: { done: false, confidence: 3 }, notebook: { done: false, started: false }, slido: { done: false, started: false }, 
+        forms: { done: false, started: false }, assignment: { done: false, started: false }, gallery: { done: false, started: false }
     });
-    const tempCalibration = reactive({ confidence: 3, hasPreview: false });
+    const tempCalibration = reactive({ confidence: 3 });
     const tempRating = ref(3);
     const tempFeedback = ref('');
     const isEditing = ref(false); 
 
     const initTaskSync = () => {
-        const userRef = dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`);
-        onValue(userRef, (snap) => {
+        if (!myUid.value) return; 
+        onValue(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`), (snap) => {
             const val = snap.val();
-            if(!val || (val.auth && !val.auth.isActive)) {
-                localStorage.removeItem('zodiac_identity');
-                alert("⛔ 連線中斷\n您的身份已被管理員撤銷。");
-                window.location.reload();
-                return;
-            }
+            if(!val || (val.auth && !val.auth.isActive)) { localStorage.removeItem('zodiac_identity'); location.reload(); return; }
             if(val.tasks) Object.assign(myTasks, val.tasks);
-            if(val.rating) myProfile.rating = val.rating;
             if(val.feedback) tempFeedback.value = val.feedback;
             if(val.rating) tempRating.value = val.rating;
         });
     };
 
+    const assignmentMeta = computed(() => {
+        const type = globalState.config?.assignmentType || 'individual';
+        return type === 'group' 
+            ? { title: 'Group Project (分組報告)', desc: '組長上傳，組員確認。', icon: 'fa-solid fa-users-viewfinder' }
+            : { title: 'Individual Work (個人作業)', desc: '請獨立完成並上傳。', icon: 'fa-solid fa-user-pen' };
+    });
+
     const submitCalibration = () => {
-        if (!myUid.value || !sessionId.value) { addToast("連線資料異常，請重新整理網頁", "error"); return; }
+        if (!myUid.value) { addToast("資料同步中，請稍後再試", "error"); return; }
         const now = Date.now();
-        const fakeStartTime = now - 6000;
-        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/calibration`), { 
+        const updates = { 
             done: true, 
             confidence: tempCalibration.confidence, 
-            hasPreview: tempCalibration.hasPreview || false,
-            startTime: fakeStartTime,
-            endTime: now,
+            endTime: now, 
+            startTime: myTasks.calibration.startTime || (now - 6000), 
             duration: 6 
-        }).then(() => playSFX('success')).catch(e => addToast("校準失敗: " + e.message, "error"));
+        };
+        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/calibration`), updates)
+            .then(() => playSFX('success'))
+            .catch(e => addToast("校準失敗: " + e.message, "error"));
+    };
+
+    const markDone = (k) => {
+        if (!myUid.value) return;
+        if (k === 'assignment' && globalState.config?.assignmentType === 'group') {
+            if (!confirm("【誠信確認】\n\n我確認我已參與本組討論，並對產出有所貢獻。\n\n(系統將記錄此確認操作)")) return;
+        }
+
+        const now = Date.now();
+        let startTime = myTasks[k].startTime || (now - 10000); 
+        let duration = Math.round((now - startTime) / 1000);
+        
+        const updates = { done: true, endTime: now, duration, startTime };
+        if (k === 'assignment') updates.type = globalState.config?.assignmentType || 'individual';
+
+        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), updates)
+        .then(() => playSFX('success')).catch(e => addToast("失敗: " + e.message, "error"));
+    };
+
+    const isUnlocked = (k) => {
+        if (k === 'calibration') return true; 
+
+        if (!myTasks.calibration.done) return false;
+        
+        const pA = globalState.phaseA || 'waiting';
+        const pB = globalState.phaseB || 'waiting';
+
+        if (k === 'notebook') return pA === 'warmup' || pA === 'main_open';
+        if (k === 'slido') return pA === 'interact' || pA === 'main_open';
+        if (k === 'forms') return pA === 'quiz' || pA === 'main_open';
+        
+        if (k === 'assignment') return pB === 'submission_open' || pB === 'final_show';
+        if (k === 'gallery') return pB === 'gallery_open' || pB === 'final_show';
+        return false;
+    };
+
+    const groupADone = computed(() => myTasks.notebook.done && myTasks.slido.done && myTasks.forms.done);
+
+    const submitDebrief = () => { 
+        if (!myUid.value) return;
+        if(tempFeedback.value.length < 5) return addToast("請多寫一點心得", "error");
+        
+        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`), { 
+            rating: tempRating.value,
+            feedback: sanitize(tempFeedback.value) 
+        });
+        isEditing.value = false;
+        addToast("心得與評分已更新！", "success");
     };
 
     const openLink = (k) => {
         playSFX('click');
-        if(!myTasks[k].started) { 
-            update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { started: true, startTime: Date.now() }); 
+        if(myUid.value && !myTasks[k].started) {
+            update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { started: true, startTime: Date.now() });
         }
-        setTimeout(() => {
-            let url = globalState.links && globalState.links[k];
-            if (url) {
-                if (k === 'assignment' && url.includes('forms') && myProfile.studentId) {
-                }
-                window.open(url, '_blank');
+        if(globalState.links?.[k]) window.open(globalState.links[k], '_blank');
+    };
+
+    return { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, markDone, isUnlocked, isEditing, groupADone, assignmentMeta, submitCalibration, submitDebrief, openLink };
+}
+
+function useIdentity(sessionId, addToast, changeView, playSFX, globalState) {
+    const loading = ref(false); const claimingUser = ref(null); const myProfile = reactive({ uid: '', name: '', zodiac: null, studentId: '' });
+    
+    const searchStudent = async (sid) => {
+        if(!sid) return addToast("請輸入學號", "error");
+        loading.value = true;
+        try { const s = await get(dbRef(db, `classrooms/${sessionId.value}/students/${sid.trim().toUpperCase()}`));
+              if(s.exists()) { playSFX('click'); claimingUser.value = { uid: sid.trim().toUpperCase(), ...s.val() }; } 
+              else addToast("無此學號", "error"); } catch(e){ console.error(e); } finally { loading.value = false; }
+    };
+    
+    const executeClaim = async (pin) => {
+        if(!pin) return false; loading.value = true;
+        try { 
+            const t = crypto.randomUUID();
+            const targetUid = claimingUser.value.uid;
+            await update(dbRef(db, `classrooms/${sessionId.value}/students/${targetUid}/auth`), { isActive: true, token: t, pin });
+            
+            const userData = { uid: targetUid, token: t, name: claimingUser.value.profile.Name, zodiac: claimingUser.value.profile.Zodiac, studentId: claimingUser.value.profile.StudentId };
+            localStorage.setItem('zodiac_identity', JSON.stringify(userData));
+            
+            Object.assign(myProfile, userData);
+            myProfile.zodiac = CONFIG.ZODIAC.find(z=>z.label===userData.zodiac);
+            
+            loading.value = false;
+            return true;
+        } catch(e) { addToast("錯誤: " + e.message, "error"); loading.value = false; return false; }
+    };
+
+    const attemptAutoLogin = async () => {
+        const stored = localStorage.getItem('zodiac_identity');
+        if(!stored) { changeView('roster'); return false; }
+        
+        loading.value = true;
+        try {
+            const local = JSON.parse(stored);
+            const s = await get(dbRef(db, `classrooms/${sessionId.value}/students/${local.uid}/auth`));
+            
+            if(s.exists() && s.val().token === local.token) {
+                Object.assign(myProfile, local);
+                myProfile.zodiac = CONFIG.ZODIAC.find(z=>z.label===local.zodiac);
+                update(dbRef(db, `classrooms/${sessionId.value}/students/${local.uid}/auth`), { isActive: true });
+                changeView('dashboard');
+                loading.value = false;
+                return true; 
+            } else { 
+                localStorage.removeItem('zodiac_identity'); 
+                changeView('roster'); 
+                loading.value = false;
+                return false; 
             }
-        }, 100);
+        } catch(e) { 
+            changeView('roster'); 
+            loading.value = false;
+            return false; 
+        }
     };
-
-    const markDone = (k) => {
-        if (!myUid.value || !sessionId.value) { addToast("連線資料異常，請重新整理網頁", "error"); return; }
-        const now = Date.now();
-        let startTime = myTasks[k].startTime || (now - 10000); 
-        let duration = Math.round((now - startTime) / 1000);
-        if (isNaN(duration) || duration < 0) duration = 10; 
-        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { 
-            done: true, endTime: now, duration: duration, startTime: startTime 
-        }).then(() => playSFX('success')).catch(e => addToast("更新失敗: " + e.message, "error"));
-    };
-
-    const submitDebrief = () => {
-        const cleanFeedback = sanitize(tempFeedback.value);
-        if(cleanFeedback.length < 2) { addToast("請填寫至少幾個字的心得", "error"); return; }
-        playSFX('success');
-        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`), { rating: tempRating.value, feedback: cleanFeedback });
-        addToast(myProfile.rating ? "心得已更新！" : "心得已提交，感謝您的回饋！", "success");
-        isEditing.value = false;
-    };
-
-    const isUnlocked = (k) => {
-        if (!myTasks.calibration.done) return false;
-        
-        const rawPhase = globalState.currentPhase || 'waiting';
-        const p = String(rawPhase).toLowerCase(); 
-
-        const isMainPhase = ['warmup', 'interact', 'quiz', 'all_open'].some(x => p.includes(x));
-        
-        if (k === 'notebook') return isMainPhase;
-        
-        if (k === 'slido') return ['interact', 'all_open'].some(x => p.includes(x));
-        
-        if (k === 'forms') return ['quiz', 'all_open'].some(x => p.includes(x));
-        
-        if (k === 'assignment') return p.includes('assignment') || p.includes('report');
-        
-        return false;
-    };
-
-    return { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, submitCalibration, openLink, markDone, submitDebrief, isUnlocked, isEditing };
+    return { loading, claimingUser, myProfile, searchStudent, executeClaim, attemptAutoLogin, logout: ()=>{ localStorage.removeItem('zodiac_identity'); location.reload(); } };
 }
 
 createApp({
@@ -606,101 +527,71 @@ createApp({
         const viewState = ref('entry');
         const toasts = ref([]);
         const searchQuery = ref('');
-
         const sessionRef = computed(() => form.sessionId);
-        const changeView = (v) => viewState.value = v;
-
         const { playSFX } = useSound();
-
-        const addToast = (msg, type = 'info') => {
-            const id = Date.now();
-            let icon = 'fa-solid fa-circle-info';
-            if(type === 'success') icon = 'fa-solid fa-circle-check';
-            if(type === 'error') icon = 'fa-solid fa-circle-exclamation';
-            toasts.value.push({ id, msg, type, icon });
-            
-            setTimeout(() => {
-                const idx = toasts.value.findIndex(t => t.id === id);
-                if (idx !== -1) toasts.value.splice(idx, 1);
-            }, 3000);
-        };
-
-        watch(() => toasts.value.length, (newLen, oldLen) => {
-            if (newLen > oldLen) {
-                const latest = toasts.value[toasts.value.length - 1];
-                if (latest.type === 'error') playSFX('error');
-                else if (latest.type === 'success') playSFX('success');
-                else playSFX('ping');
-            }
-        });
-
-        const myProfileRef = reactive({ uid: '', name: '', zodiac: null });
-        const myUidRef = computed(() => myProfileRef.uid);
+        const addToast = (msg, type='info') => { toasts.value.push({id:Date.now(), msg, type, icon: type==='error'?'fa-circle-xmark':'fa-circle-info'}); setTimeout(()=>toasts.value.shift(),3000); };
+        
+        const myProfile = reactive({ uid: '', name: '', zodiac: null, studentId: '' });
+        const myUidRef = computed(()=>myProfile.uid);
+        
         const { isOnline, globalState, initConnection, startHeartbeat, initRoomSync } = useRoom(sessionRef, myUidRef);
         
-        const { loading, claimingUser, myProfile, executeClaim, attemptAutoLogin, searchStudent, logout } = useIdentity(sessionRef, addToast, changeView, playSFX, globalState);
+        const { loading, claimingUser, myProfile: idProfile, executeClaim, attemptAutoLogin, searchStudent, logout } 
+              = useIdentity(sessionRef, addToast, (v)=>viewState.value=v, playSFX, globalState);
         
-        watch(myProfile, (newP) => Object.assign(myProfileRef, newP));
+        watch(idProfile, (newP) => {
+            if(newP) Object.assign(myProfile, newP);
+        });
 
-        const { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, submitCalibration, openLink, markDone, submitDebrief, isUnlocked, isEditing } = useTasks(sessionRef, myUidRef, globalState, myProfile, addToast, playSFX);
+        const { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, markDone, isUnlocked, isEditing, groupADone, assignmentMeta, submitCalibration, submitDebrief, openLink } 
+              = useTasks(sessionRef, myUidRef, globalState, myProfile, addToast, playSFX);
 
         onMounted(() => {
             const pid = new URLSearchParams(window.location.search).get('id');
             if(pid) { 
                 form.sessionId = pid; 
-                setTimeout(() => attemptAutoLogin().then(success => { if(success) startDashboardServices(); }), 100);
+                setTimeout(() => {
+                    attemptAutoLogin().then((success) => { 
+                        if(success) { initRoomSync(); initTaskSync(); startHeartbeat(); }
+                    });
+                }, 500); 
             }
             initConnection();
         });
 
-        const startDashboardServices = () => {
-            initRoomSync();
-            initTaskSync();
-            startHeartbeat();
+        const enterRoom = async () => { 
+            if(!form.sessionId) return addToast("請輸入代碼", "error");
+            playSFX('click');
+            const success = await attemptAutoLogin();
+            if(success) {
+                initRoomSync(); initTaskSync(); startHeartbeat();
+            }
         };
-
-        const enterRoom = () => {
-            playSFX('boot');
-            if(!form.sessionId) { addToast("請輸入教室代碼", "error"); return; }
-            attemptAutoLogin().then(success => {
-                if(success) startDashboardServices();
-            });
-        };
-
+        
         const executeAtomicClaim = async () => {
             playSFX('click');
             const success = await executeClaim(form.pin);
-            if(success) startDashboardServices();
+            if(success) {
+                initRoomSync(); initTaskSync(); startHeartbeat();
+                claimingUser.value = null; 
+                viewState.value = 'dashboard';
+            }
         };
-        
-        // 修改後的判斷邏輯：完成 (1+2+3) 或者 (4) 皆可
-        const allTasksDone = computed(() => {
-            const regular = myTasks.notebook.done && myTasks.slido.done && myTasks.forms.done;
-            const assignment = myTasks.assignment.done;
-            return regular || assignment;
-        });
-        
+
         const getTaskClass = (k) => {
-            if (myTasks[k].done) return 'task-done beacon-border';
-            if (myTasks[k].started) return 'task-active beacon-ring ring-1';
-            if (!isUnlocked(k)) return 'task-locked';
-            return 'bg-slate-800/50 border-slate-700';
+            if(myTasks[k].done) return 'task-done beacon-border'; 
+            if(myTasks[k].started) return 'task-active beacon-border'; 
+            if(!isUnlocked(k)) return 'task-locked';
+            return 'bg-slate-800/50 border-transparent'; 
         };
 
-        const handleSearch = () => {
-            searchStudent(searchQuery.value);
-        };
-
-        return {
-            form, viewState, loading, toasts, searchQuery, isOnline,
-            claimingUser, myProfile, globalState, tempCalibration, tempRating, tempFeedback,
-            enterRoom, handleSearch, executeAtomicClaim, logout,
-            submitCalibration, openLink, markDone, submitDebrief, forceReload: ()=>location.reload(),
-            getZodiacIcon, getBeaconClass, getTaskClass, isUnlocked, allTasksDone, 
-            globalProgress: computed(()=>globalState.globalProgress),
-            mainTasks: CONFIG.TASKS_META, myTasks,
-            playSFX,
-            isEditing
+        return { form, viewState, loading, toasts, searchQuery, isOnline, claimingUser, myProfile: computed(()=>myProfile), globalState,
+                 enterRoom, handleSearch: ()=>searchStudent(searchQuery.value), executeAtomicClaim, logout,
+                 myTasks, mainTasks: CONFIG.TASKS_META, assignmentMeta, tempCalibration, tempRating, tempFeedback,
+                 getTaskClass, isUnlocked, groupADone, isEditing,
+                 submitCalibration, submitDebrief, openLink, markDone,
+                 getZodiacIcon, getBeaconClass: (l) => { const z=CONFIG.ZODIAC.find(x=>x.label===l); return z?`theme-${z.element}`:'theme-earth'; },
+                 globalProgress: computed(()=>globalState.globalProgress)
         };
     }
 }).mount('#app');

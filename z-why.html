@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zodiac Ops Center | v4.9 Dual-Track (Auto-Deploy)</title>
+    <title>Zodiac Ops Center | v4.9 Dual-Track (Hybrid Assessment)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3.4.19/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -42,6 +42,10 @@
         
         .btn-active-A { background: rgba(59, 130, 246, 0.15) !important; border-color: #3b82f6 !important; color: #60a5fa !important; box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
         .btn-active-B { background: rgba(245, 158, 11, 0.15) !important; border-color: #f59e0b !important; color: #fbbf24 !important; box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); }
+        
+        /* 移除數字輸入框箭頭 */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
     </style>
 </head>
 <body class="overflow-hidden text-base">
@@ -61,7 +65,7 @@
         <div class="container mx-auto px-6 h-full flex justify-between items-center max-w-7xl">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg text-xl"><i class="fa-solid fa-shield-halved"></i></div>
-                <div><div class="font-bold text-xl text-white tracking-wide">ZODIAC OPS</div><div class="text-xs text-slate-400 font-mono tracking-widest">TEACHER v4.9 AUTO</div></div>
+                <div><div class="font-bold text-xl text-white tracking-wide">ZODIAC OPS</div><div class="text-xs text-slate-400 font-mono tracking-widest">TEACHER v4.9 HYBRID</div></div>
             </div>
             <div class="hidden md:flex items-center gap-8 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-800 px-8 py-2 rounded-full border border-slate-600">
                 <div class="flex flex-col items-center"><span class="text-[10px] text-slate-400 tracking-wider font-bold uppercase">總人數</span><span class="text-2xl font-mono font-bold leading-none text-white">{{ studentCount }}</span></div>
@@ -224,6 +228,7 @@
                                 </label>
                             </div>
                             <div class="w-px h-10 bg-slate-700 mx-2"></div>
+                            
                             <div class="flex bg-slate-900 rounded border border-slate-700 p-1" v-if="state.config?.enableGroupB">
                                 <button @click="switchAndDeploy('individual')" class="px-3 py-1 rounded text-[10px] font-bold transition" :class="state.config?.assignmentType==='individual'?'bg-slate-700 text-white':'text-slate-500'">個人作業 (自動部署)</button>
                                 <button @click="switchAndDeploy('group')" class="px-3 py-1 rounded text-[10px] font-bold transition" :class="state.config?.assignmentType==='group'?'bg-amber-700 text-white':'text-slate-500'">分組報告 (自動部署)</button>
@@ -342,11 +347,24 @@
                                         <div class="status-dot" :class="s.rating > 0?'bg-white shadow-[0_0_5px_white]':'bg-slate-800'" title="總結(Debrief)"></div>
                                     </div>
                                 </td>
-                                <td class="p-4 border-l border-slate-700">
-                                    <div class="flex items-center gap-2">
-                                        <div class="status-dot" :class="s.tasks?.assignment?.done?'bg-amber-500 shadow-[0_0_5px_#f59e0b]':'bg-slate-800'" title="心得繳交"></div>
-                                        <div class="status-dot" :class="s.tasks?.gallery?.done?'bg-pink-500 shadow-[0_0_5px_#ec4899]':'bg-slate-800'" title="展覽"></div>
-                                        <span v-if="s.tasks?.assignment?.type === 'group'" class="text-[9px] border border-amber-500/50 text-amber-500 px-1 rounded ml-2">GRP</span>
+                                <td class="p-4 border-l border-slate-700 bg-slate-800/50 min-w-[220px]">
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex flex-col items-center gap-1" title="個人作業 (15%)">
+                                            <div class="status-dot" :class="s.tasks?.assignment?.done ? 'bg-amber-500 shadow-[0_0_5px_#f59e0b]' : 'bg-slate-700'"></div>
+                                            <span class="text-[10px] text-slate-500 uppercase">Indiv</span>
+                                        </div>
+                                        <div class="w-px h-8 bg-slate-600"></div>
+                                        <div class="flex flex-col gap-1">
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-[10px] text-slate-400 w-6 text-right">作品</span>
+                                                <input type="number" min="0" max="8" :value="s.tasks?.group_b?.product" @change="updateGroupScore(s.uid, 'product', $event.target.value)" class="w-10 bg-slate-900 border border-slate-600 rounded px-1 text-center text-xs text-blue-300 font-bold focus:border-blue-500">
+                                            </div>
+                                            <div class="flex items-center gap-1">
+                                                <span class="text-[10px] text-slate-400 w-6 text-right">參與</span>
+                                                <input type="number" min="0" max="7" :value="s.tasks?.group_b?.participation" @change="updateGroupScore(s.uid, 'participation', $event.target.value)" class="w-10 bg-slate-900 border border-slate-600 rounded px-1 text-center text-xs text-pink-300 font-bold focus:border-pink-500">
+                                                <button @click="viewFeedback(s)" class="w-5 h-5 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-600 text-slate-300 transition" title="檢視自述"><i class="fa-solid fa-eye text-[10px]"></i></button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="p-4 text-right pr-6"><span class="status-dot" :class="getStatusColor(s)"></span></td>
@@ -379,6 +397,7 @@ const CONFIG = {
         messagingSenderId: "367793212618",
         appId: "1:367793212618:web:c11acedc50ce6fc3897833"
     },
+    // 請務必確認此 GAS 網址為最新版本
     GAS_URL: "https://script.google.com/macros/s/AKfycbyUjUj--8y3LwDUhjjosPUwAwojHeWxGG-KmB0ZNPdBrm_Pc-_UA8stK5LZsitp0XuyUw/exec", 
     ZODIAC: [
         {label:'子鼠', element:'air'}, {label:'丑牛', element:'earth'}, {label:'寅虎', element:'fire'}, {label:'卯兔', element:'water'},
@@ -401,262 +420,129 @@ const app = initializeApp(CONFIG.FIREBASE);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-const sanitize = (str) => str ? str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) : '';
+// 完整連結庫 - 分組協作
+const ZODIAC_LINKS_GROUP = {
+    "子": "https://padlet.com/jnynlin/breakout-room/Vnr04VORyJVD2BdW-oAdpz2yKWAM9b10R",
+    "丑": "https://padlet.com/jnynlin/breakout-room/olbw23ZKy66R4L30-oAdpz2yKWAM9b10R",
+    "寅": "https://padlet.com/jnynlin/breakout-room/nRxeqrl17Od7456P-oAdpz2yKWAM9b10R",
+    "卯": "https://padlet.com/jnynlin/breakout-room/961rqRQbP5Wo2nND-oAdpz2yKWAM9b10R",
+    "辰": "https://padlet.com/jnynlin/breakout-room/kxPM2kBo3OEn4gbV-oAdpz2yKWAM9b10R",
+    "巳": "https://padlet.com/jnynlin/breakout-room/LProvDLe99BgvOMJ-oAdpz2yKWAM9b10R",
+    "午": "https://padlet.com/jnynlin/breakout-room/J7z0qjZ1AADLqmWQ-oAdpz2yKWAM9b10R",
+    "未": "https://padlet.com/jnynlin/breakout-room/Vnr04VORmmrX2BdW-oAdpz2yKWAM9b10R",
+    "申": "https://padlet.com/jnynlin/breakout-room/BbjnqxL788Eoq93Q-oAdpz2yKWAM9b10R",
+    "酉": "https://padlet.com/jnynlin/breakout-room/mVbpvYkOrrJB2Rkn-oAdpz2yKWAM9b10R",
+    "戌": "https://padlet.com/jnynlin/breakout-room/Vnr04VORmmJX2BdW-oAdpz2yKWAM9b10R",
+    "亥": "https://padlet.com/jnynlin/breakout-room/mWng4lAY99JJ2zdJ-oAdpz2yKWAM9b10R"
+};
 
-// 名單解析 (維持不變)
+// 完整連結庫 - 個人分流
+const ZODIAC_LINKS_INDIVIDUAL = {
+    "子": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=347869014",
+    "丑": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=347869666",
+    "寅": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348306592",
+    "卯": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348306612",
+    "辰": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348306638",
+    "巳": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348310975",
+    "午": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348310996",
+    "未": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311014",
+    "申": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311030",
+    "酉": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311050",
+    "戌": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311058",
+    "亥": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311072"
+};
+
+const sanitize = (str) => str ? str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) : '';
 const parseRosterInput = (rawText) => {
     if (!rawText) return [];
     const lines = rawText.trim().split('\n');
     return lines.map(line => {
         let parts = line.trim().split(/[\t,]+/); 
         if (parts.length >= 3) {
-            const name = parts[0]?.trim(); 
-            const id = parts[2]?.trim();   
-            if (id === '編號' || name === '姓名') return null;
-            if (!id || !name) return null;
+            const name = parts[0]?.trim(); const id = parts[2]?.trim();   
+            if (id === '編號' || name === '姓名' || !id || !name) return null;
             return { StudentId: sanitize(id), Name: sanitize(name) };
         }
         if (parts.length === 2) {
-            const p0 = parts[0]?.trim();
-            const p1 = parts[1]?.trim();
+            const p0 = parts[0]?.trim(), p1 = parts[1]?.trim();
             if (/^[S\d]/.test(p0.toUpperCase())) return { StudentId: sanitize(p0), Name: sanitize(p1) };
             else return { StudentId: sanitize(p1), Name: sanitize(p0) };
         }
         return null;
     }).filter(x => x !== null);
 };
-
 const generateSessionId = () => `${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
 
 function useAuth(addToast) {
     const isLogin = ref(false);
     const performLogin = async (password) => {
-        try {
-            await signInWithEmailAndPassword(auth, "admin@zodiac.com", password);
-        } catch (e) {
-            let msg = "登入失敗";
-            if (e.code === 'auth/invalid-credential') msg = "密碼錯誤";
-            addToast(msg, 'error', 'fa-solid fa-triangle-exclamation');
-        }
+        try { await signInWithEmailAndPassword(auth, "admin@zodiac.com", password); } 
+        catch (e) { addToast("密碼錯誤", 'error'); }
     };
-    onMounted(() => {
-        onAuthStateChanged(auth, (u) => {
-            isLogin.value = !!u;
-            if (u) addToast("系統初始化完成", 'success', 'fa-solid fa-check-circle');
-        });
-    });
+    onMounted(() => onAuthStateChanged(auth, (u) => { isLogin.value = !!u; if (u) addToast("系統就緒", 'success'); }));
     return { isLogin, performLogin, logout: () => signOut(auth) };
 }
 
 function useRoom(sessionId, addToast) {
-    const status = reactive({ 
-        loginStatus: 'open', 
-        phaseA: 'waiting', 
-        phaseB: 'waiting', 
-        config: { enableGroupA: true, enableGroupB: true, assignmentType: 'individual' },
-        links: {} 
-    });
-    const schedule = reactive({ enabled: false, openAt: '', closeAt: '' });
+    const status = reactive({ loginStatus: 'open', phaseA: 'waiting', phaseB: 'waiting', config: { enableGroupA: true, enableGroupB: true, assignmentType: 'individual' }, links: {} });
     const students = ref({}); 
     const isConnected = ref(true);
 
-    const initStatusListener = () => {
-        const statusRef = dbRef(db, `classrooms/${sessionId.value}/status`);
-        onValue(statusRef, (snap) => {
-            const val = snap.val();
-            if (val) {
-                Object.assign(status, val);
-                if(!status.config) status.config = { enableGroupA: true, enableGroupB: true, assignmentType: 'individual' };
-                if (val.schedule) Object.assign(schedule, val.schedule);
-            }
-        });
-    };
-
-    const initStudentListener = () => {
-        const studentRef = dbRef(db, `classrooms/${sessionId.value}/students`);
-        onValue(studentRef, (snap) => {
-            students.value = snap.val() || {};
-        });
-    };
-
-    const initConnectionMonitor = () => {
-        const connectedRef = dbRef(db, ".info/connected");
-        onValue(connectedRef, (snap) => {
-            isConnected.value = snap.val() === true;
-            if (snap.val() === false) addToast("網路訊號中斷", 'error', 'fa-solid fa-wifi');
-        });
-    };
-
-    onMounted(() => initConnectionMonitor());
-
-    return { status, schedule, students, initStatusListener, initStudentListener };
+    const initStatusListener = () => onValue(dbRef(db, `classrooms/${sessionId.value}/status`), (snap) => {
+        const val = snap.val();
+        if (val) Object.assign(status, val);
+        if(!status.config) status.config = { enableGroupA: true, enableGroupB: true, assignmentType: 'individual' };
+    });
+    const initStudentListener = () => onValue(dbRef(db, `classrooms/${sessionId.value}/students`), (snap) => students.value = snap.val() || {});
+    onMounted(() => onValue(dbRef(db, ".info/connected"), (snap) => isConnected.value = snap.val() === true));
+    return { status, students, initStatusListener, initStudentListener };
 }
 
 function useArchiver(sessionId, students, addToast) {
     const isSyncing = ref(false);
-
     const syncToSheets = async () => {
-        if (!CONFIG.GAS_URL) { addToast("尚未設定 GAS 網址", "error", "fa-solid fa-xmark"); return; }
-        const count = Object.keys(students.value || {}).length;
-        if (count === 0 && !confirm("目前沒有學生資料，確定要存檔嗎？")) return;
-        
+        if (!CONFIG.GAS_URL) return addToast("未設定 GAS", "error");
         isSyncing.value = true;
-        addToast("正在連線到 Google Sheet...", "info", "fa-solid fa-cloud-arrow-up");
-
         try {
-            const payload = {
-                sessionId: sessionId.value,
-                students: students.value, 
-                timestamp: Date.now()
-            };
-
-            const response = await fetch(CONFIG.GAS_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
-
-            const res = await response.json();
-            
-            if (res.status === 'success') {
-                addToast("存檔成功", "success", "fa-solid fa-check");
-            } else {
-                throw new Error(res.message);
-            }
-        } catch (e) {
-            console.error(e);
-            addToast("存檔失敗: " + e.message, "error", "fa-solid fa-triangle-exclamation");
-        } finally {
-            isSyncing.value = false;
-        }
+            const res = await fetch(CONFIG.GAS_URL, { method: 'POST', body: JSON.stringify({ sessionId: sessionId.value, students: students.value }) }).then(r=>r.json());
+            if (res.status === 'success') addToast("存檔成功", "success");
+            else throw new Error(res.message);
+        } catch (e) { addToast("存檔失敗: " + e.message, "error"); } finally { isSyncing.value = false; }
     };
-
     return { isSyncing, syncToSheets };
-}
-
-function useHistory() {
-    const sessionHistory = ref([]);
-    const showHistory = ref(false);
-    const manualSessionId = ref('');
-    const latestSessionId = ref('');
-
-    const loadHistory = () => {
-        const stored = localStorage.getItem('zodiac_history');
-        if (stored) {
-            try { 
-                sessionHistory.value = JSON.parse(stored); 
-                if (sessionHistory.value.length > 0) latestSessionId.value = sessionHistory.value[0].id;
-            } catch(e) {}
-        }
-        const storedLatest = localStorage.getItem('zodiac_latest_session_id');
-        if(storedLatest) latestSessionId.value = storedLatest;
-    };
-
-    const addToHistory = (id) => {
-        if (!id) return;
-        latestSessionId.value = id;
-        localStorage.setItem('zodiac_latest_session_id', id);
-
-        const exists = sessionHistory.value.find(h => h.id === id);
-        if (exists) return;
-
-        sessionHistory.value.unshift({
-            id: id,
-            date: new Date().toLocaleDateString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
-        });
-        
-        if (sessionHistory.value.length > 10) sessionHistory.value.pop();
-        localStorage.setItem('zodiac_history', JSON.stringify(sessionHistory.value));
-    };
-
-    const switchSession = (id) => {
-        if(!id) return;
-        if(confirm(`確定要切換到課堂 [${id}] 嗎？`)) {
-            localStorage.setItem('zodiac_last_session', id);
-            const url = new URL(window.location);
-            url.searchParams.set('id', id); 
-            window.location.search = `?id=${id}`;
-        }
-    };
-
-    return { sessionHistory, showHistory, manualSessionId, latestSessionId, loadHistory, addToHistory, switchSession };
-}
-
-function useMigration(students, addToast, addToHistory) {
-    const isMigrating = ref(false);
-
-    const cloneToNewSession = async () => {
-        const count = Object.keys(students.value || {}).length;
-        if (count === 0) { addToast("沒有學生資料可供複製", "error"); return; }
-        
-        if (!confirm(`【準備建立新課堂】\n\n系統將會：\n1. 產生一組全新的 Session ID\n2. 複製這 ${count} 位學生的名單與綁定資訊\n3. 重置所有人的分數與進度\n\n確定要繼續嗎？`)) return;
-
-        isMigrating.value = true;
-        const newSessionId = generateSessionId(); 
-        const updates = {};
-
-        try {
-            updates[`classrooms/${newSessionId}/status`] = { 
-                loginStatus: 'open', 
-                phaseA: 'waiting', 
-                phaseB: 'waiting',
-                config: { enableGroupA: true, enableGroupB: true, assignmentType: 'individual' },
-                links: { notebook:'', slido:'', forms:'' } 
-            };
-
-            Object.entries(students.value).forEach(([uid, s]) => {
-                updates[`classrooms/${newSessionId}/students/${uid}/profile`] = s.profile;
-                if (s.auth) {
-                    updates[`classrooms/${newSessionId}/students/${uid}/auth`] = { ...s.auth, isActive: false };
-                } else {
-                    updates[`classrooms/${newSessionId}/students/${uid}/auth`] = { isActive: false };
-                }
-                updates[`classrooms/${newSessionId}/students/${uid}/status`] = 'offline';
-                updates[`classrooms/${newSessionId}/students/${uid}/lastSeen`] = 0; 
-            });
-
-            await update(dbRef(db), updates);
-            addToHistory(newSessionId);
-
-            if(confirm(`新課堂 [${newSessionId}] 建立成功！\n\n是否立即切換過去？`)) {
-                localStorage.setItem('zodiac_last_session', newSessionId); 
-                window.location.search = `?id=${newSessionId}`;
-            }
-
-        } catch(e) {
-            console.error(e);
-            addToast("建立失敗: " + e.message, "error");
-        } finally {
-            isMigrating.value = false;
-        }
-    };
-
-    return { isMigrating, cloneToNewSession };
 }
 
 createApp({
     setup() {
         const form = reactive({ sessionId: generateSessionId(), password: '' });
         const toasts = reactive([]); 
-        const showImporter = ref(false);
+        const showImporter = ref(false), showHistory = ref(false);
         const searchQuery = ref('');
+        const manualSessionId = ref(''), sessionHistory = ref([]);
+        const localLinks = reactive({ notebook: '', slido: '', forms: '', assignment: '' });
+        const linksDirty = ref(false);
 
         const addToast = (msg, type = 'info', icon = 'fa-solid fa-circle-info') => {
-            const id = Date.now() + Math.random();
-            toasts.push({ id, msg, type, icon });
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                const idx = toasts.findIndex(t => t.id === id);
-                if (idx > -1) toasts.splice(idx, 1);
-            }, 3000);
+            const id = Date.now(); toasts.push({ id, msg, type, icon });
+            setTimeout(() => { const idx = toasts.findIndex(t => t.id === id); if (idx > -1) toasts.splice(idx, 1); }, 3000);
         };
 
         const { isLogin, performLogin, logout } = useAuth(addToast);
         const sessionIdRef = computed(() => form.sessionId);
-        const { status, schedule, students, initStatusListener, initStudentListener } = useRoom(sessionIdRef, addToast);
+        const { status, students, initStatusListener, initStudentListener } = useRoom(sessionIdRef, addToast);
         const { isSyncing, syncToSheets } = useArchiver(sessionIdRef, students, addToast);
-        const { sessionHistory, showHistory, manualSessionId, latestSessionId, loadHistory, addToHistory, switchSession } = useHistory();
-        const { isMigrating, cloneToNewSession } = useMigration(students, addToast, addToHistory);
+
+        // --- History Logic ---
+        const loadHistory = () => { try { sessionHistory.value = JSON.parse(localStorage.getItem('zodiac_history') || '[]'); } catch(e){} };
+        const addToHistory = (id) => {
+            if (!sessionHistory.value.find(h => h.id === id)) {
+                sessionHistory.value.unshift({ id, date: new Date().toLocaleDateString() });
+                if (sessionHistory.value.length > 10) sessionHistory.value.pop();
+                localStorage.setItem('zodiac_history', JSON.stringify(sessionHistory.value));
+            }
+            localStorage.setItem('zodiac_last_session', id);
+        };
+        const switchSession = (id) => { if(id && confirm(`切換至 [${id}]？`)) { localStorage.setItem('zodiac_last_session', id); window.location.search = `?id=${id}`; } };
 
         onMounted(() => {
             loadHistory();
@@ -664,261 +550,141 @@ createApp({
             const savedId = localStorage.getItem('zodiac_last_session');
             if (urlId) form.sessionId = urlId;
             else if (savedId) form.sessionId = savedId;
-
-            if (!latestSessionId.value && form.sessionId) {
-                latestSessionId.value = form.sessionId;
-                localStorage.setItem('zodiac_latest_session_id', form.sessionId);
-            }
-
-            setInterval(() => { 
-                if (isLogin.value && schedule.enabled) {
-                    const nowStr = new Date().toTimeString().slice(0,5);
-                    if (nowStr === schedule.openAt && status.loginStatus !== 'open') updateStatus('open');
-                    if (nowStr === schedule.closeAt && status.loginStatus !== 'locked') updateStatus('locked');
-                }
-            }, 1000);
         });
 
-        watch(isLogin, (val) => {
-            if (val) {
-                localStorage.setItem('zodiac_last_session', form.sessionId);
-                addToHistory(form.sessionId); 
-                initStatusListener();
-                initStudentListener();
-            }
-        });
-
-        const updateStatus = (s) => update(dbRef(db, `classrooms/${form.sessionId}/status`), { loginStatus: s });
-        
-        // [New] Config Updater
-        const updateConfig = (key, value) => {
-            set(dbRef(db, `classrooms/${form.sessionId}/status/config/${key}`), value);
-        };
-
-        // [Updated] Switch Phase with Group Support
-        const switchPhase = async (p, group) => {
-            const updates = {};
-            const oldPhase = group === 'A' ? status.phaseA : status.phaseB;
-            // Optimistic UI
-            if (group === 'A') status.phaseA = p;
-            if (group === 'B') status.phaseB = p;
-
-            try {
-                if (group === 'A') updates.phaseA = p;
-                if (group === 'B') updates.phaseB = p;
-                updates.phaseUpdatedAt = Date.now();
-                await update(dbRef(db, `classrooms/${form.sessionId}/status`), updates);
-                const label = CONFIG.PHASES[p]?.shortLabel || p;
-                addToast(`Group ${group} Set: ${label}`, 'success', 'fa-solid fa-bullhorn');
-            } catch (e) {
-                console.error("Firebase update failed:", e);
-                if (group === 'A') status.phaseA = oldPhase;
-                if (group === 'B') status.phaseB = oldPhase;
-                addToast("更新失敗", "error", "fa-solid fa-triangle-exclamation");
-            }
-        };
-        
-        const saveSchedule = () => update(dbRef(db, `classrooms/${form.sessionId}/status/schedule`), schedule);
-        const refreshId = () => form.sessionId = generateSessionId();
-        
-        const localLinks = reactive({ notebook: '', slido: '', forms: '', assignment: '', gallery: '' });
-        const linksDirty = ref(false);
+        watch(isLogin, (val) => { if (val) { addToHistory(form.sessionId); initStatusListener(); initStudentListener(); } });
         watch(() => status.links, (newVal) => { if (!linksDirty.value && newVal) Object.assign(localLinks, newVal); }, { deep: true });
-        const syncLinks = () => update(dbRef(db, `classrooms/${form.sessionId}/status/links`), localLinks).then(() => { 
-            addToast("連結與設定已儲存", "success", "fa-solid fa-link"); 
-            linksDirty.value = false; 
-        });
 
+        // --- Core Actions ---
+        const updateStatus = (s) => update(dbRef(db, `classrooms/${form.sessionId}/status`), { loginStatus: s });
+        const updateConfig = (k, v) => set(dbRef(db, `classrooms/${form.sessionId}/status/config/${k}`), v);
+        const switchPhase = (p, g) => update(dbRef(db, `classrooms/${form.sessionId}/status`), g==='A'?{phaseA:p}:{phaseB:p});
+        const syncLinks = () => update(dbRef(db, `classrooms/${form.sessionId}/status/links`), localLinks).then(()=>{ linksDirty.value=false; addToast("已同步", "success"); });
+        const refreshId = () => form.sessionId = generateSessionId();
+
+        // --- Roster Tools ---
         const importRaw = ref(''), importMode = ref('append'), parsedPreview = ref([]);
         const parseInput = () => {
             const data = parseRosterInput(importRaw.value);
-            parsedPreview.value = data.map(s => {
-                const uid = s.StudentId.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                return { id: s.StudentId, name: s.Name, exists: !!students.value[uid] };
-            });
+            parsedPreview.value = data.map(s => ({ id: s.StudentId, name: s.Name, exists: !!students.value[s.StudentId.replace(/[^a-zA-Z0-9]/g,'').toUpperCase()] }));
         };
         const executeImport = async () => {
-            if(importMode.value === 'overwrite' && !confirm("警告：這將會刪除目前 [所有學生] 的成績與進度，確定嗎？")) return;
-            if(importMode.value === 'sync' && !confirm("確認執行 [名單校正]？\n\n系統將會：\n1. 保留名單內學生的成績\n2. 刪除不在名單內的學生 (退選者)\n3. 新增名單內缺少的新生")) return;
-
+            if(importMode.value==='overwrite' && !confirm("確定重置所有資料？")) return;
             const updates = {};
-            const inputData = parsedPreview.value; 
-            const currentDB = students.value || {}; 
-
-            if(importMode.value === 'overwrite') {
-                await set(dbRef(db, `classrooms/${form.sessionId}/students`), null);
-            }
-
-            if(importMode.value === 'sync') {
-                const inputIds = new Set(inputData.map(s => s.id.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase()));
-                Object.entries(currentDB).forEach(([uid, student]) => {
-                    const dbId = (student.profile?.StudentId || '').trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                    if(!inputIds.has(dbId)) {
-                        updates[`classrooms/${form.sessionId}/students/${uid}`] = null;
-                    }
-                });
-            }
-
-            inputData.forEach(s => {
-                const uid = s.id.trim().replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                const exists = !!currentDB[uid];
-                if(importMode.value === 'append' && exists) return;
-                if(importMode.value === 'sync' && exists) return;
-                const z = CONFIG.ZODIAC[Math.floor(Math.random()*12)].label;
-                updates[`classrooms/${form.sessionId}/students/${uid}/profile`] = { StudentId: s.id, Name: s.name, Zodiac: z };
-                if(!exists) updates[`classrooms/${form.sessionId}/students/${uid}/auth`] = { isActive: false };
+            if(importMode.value==='overwrite') await set(dbRef(db, `classrooms/${form.sessionId}/students`), null);
+            parsedPreview.value.forEach(s => {
+                const uid = s.id.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();
+                if(importMode.value!=='overwrite' && students.value[uid] && importMode.value==='append') return;
+                updates[`classrooms/${form.sessionId}/students/${uid}/profile`] = { StudentId: s.id, Name: s.name, Zodiac: CONFIG.ZODIAC[Math.floor(Math.random()*12)].label };
+                if(!students.value[uid]) updates[`classrooms/${form.sessionId}/students/${uid}/auth`] = { isActive: false };
             });
-
-            if(Object.keys(updates).length > 0) {
-                await update(dbRef(db), updates);
-                let msg = importMode.value === 'sync' ? "名單校正完成" : "成功匯入資料";
-                addToast(msg, "success", "fa-solid fa-file-import");
-                showImporter.value = false; importRaw.value = ''; parsedPreview.value = [];
-            } else {
-                addToast("無需變更", "info", "fa-solid fa-check");
-            }
+            if(Object.keys(updates).length) { await update(dbRef(db), updates); addToast("匯入完成", "success"); showImporter.value=false; }
         };
-        const generateDemoRoster = () => { importRaw.value = CONFIG.ZODIAC.map((z, i) => `S11${String(i+1).padStart(2,'0')}\t學員 ${z.label}`).join('\n'); parseInput(); };
+        const generateDemoRoster = () => { importRaw.value = CONFIG.ZODIAC.map((z,i)=>`S11${String(i+1).padStart(2,'0')}\t學員 ${z.label}`).join('\n'); parseInput(); };
 
-        const allStudents = computed(() => Object.entries(students.value || {}).map(([uid, data]) => ({ uid, ...data })));
+        // --- Computed & Helpers ---
+        const allStudents = computed(() => Object.entries(students.value||{}).map(([uid,d])=>({uid,...d})));
         const displayedList = computed(() => {
             const q = searchQuery.value.toLowerCase();
-            return allStudents.value
-                .filter(s => (s.profile?.Name || '').toLowerCase().includes(q) || (s.profile?.StudentId || '').includes(q.toUpperCase()))
-                .sort((a,b) => (a.profile?.StudentId || '').localeCompare(b.profile?.StudentId || ''))
-                .map((s, index) => ({ ...s, rank: index + 1 }));
+            return allStudents.value.filter(s=>(s.profile?.Name||'').toLowerCase().includes(q)||(s.profile?.StudentId||'').includes(q.toUpperCase())).sort((a,b)=>(a.profile?.StudentId||'').localeCompare(b.profile?.StudentId||'')).map((s,i)=>({...s, rank:i+1}));
         });
-        const activeCount = computed(() => allStudents.value.filter(s => s.auth?.isActive).length);
+        const activeCount = computed(() => allStudents.value.filter(s=>s.auth?.isActive).length);
         const stats = computed(() => { 
-            const list = displayedList.value;
-            const calibration = list.filter(s => s.tasks?.calibration?.done).length;
-            const notebook = list.filter(s => s.tasks?.notebook?.done).length; 
-            const slido = list.filter(s => s.tasks?.slido?.done).length; 
-            const forms = list.filter(s => s.tasks?.forms?.done).length; 
-            const assignment = list.filter(s => s.tasks?.assignment?.done).length;
-            const debrief = list.filter(s => s.rating > 0).length;
-            return { calibration, notebook, slido, forms, assignment, debrief, totalDone: calibration + notebook + slido + forms + assignment + debrief }; 
+            const l=displayedList.value; 
+            const cal=l.filter(s=>s.tasks?.calibration?.done).length;
+            const nb=l.filter(s=>s.tasks?.notebook?.done).length;
+            const sl=l.filter(s=>s.tasks?.slido?.done).length;
+            const fm=l.filter(s=>s.tasks?.forms?.done).length;
+            const ass=l.filter(s=>s.tasks?.assignment?.done).length;
+            return { totalDone: cal+nb+sl+fm+ass }; 
         });
-        const globalProgress = computed(() => activeCount.value === 0 ? 0 : (stats.value.totalDone / (activeCount.value * 6)) * 100);
-
-        const copyLink = () => navigator.clipboard.writeText(`${window.location.origin}/index.html?id=${form.sessionId}`).then(()=>addToast("連結已複製", "success", "fa-solid fa-copy"));
-        const copySessionId = () => navigator.clipboard.writeText(form.sessionId).then(()=>addToast("教室代碼 (Session ID) 已複製", "success", "fa-solid fa-key"));
-        const qrCodeUrl = computed(() => `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin + '/index.html?id=' + form.sessionId)}`);
-        const getBeaconClass = (s) => { if (!s.profile?.Zodiac) return ''; const z = CONFIG.ZODIAC.find(x => x.label === s.profile.Zodiac); return z ? `elm-${z.element}` : ''; };
-        const getStatusColor = (s) => { 
-            if(!s.auth?.isActive) return 'status-offline'; 
-            if(s.status === 'offline' || (Date.now() - (s.lastSeen || 0) > 90000)) return 'status-offline'; 
-            if(s.status === 'late') return 'status-late'; 
-            return 'status-online'; 
-        };
+        const globalProgress = computed(() => activeCount.value===0 ? 0 : (stats.value.totalDone/(activeCount.value*5))*100);
         
-        const calculateScore = (student) => { 
-            let score = 0; const t = student.tasks || {}; 
-            if (t.calibration?.done) score += 5;
-            if (t.notebook?.done) { const d = t.notebook.duration || 0; score += (d < 15 ? 5 : 15); }
-            if (t.slido?.done) { const d = t.slido.duration || 0; score += (d < 5 ? 5 : 15); }
-            if (t.forms?.done) { const d = t.forms.duration || 0; score += (d < 20 ? 10 : 25); }
-            if (student.rating > 0) score += 10;
-            if (t.assignment?.done) score += 15;
-            if (t.gallery?.done) score += 15; 
-            return score; 
-        };
-
-        const isSpeedrun = (s) => { const t = s.tasks||{}; return (t.notebook?.done && (t.notebook.duration||0)<15) || (t.slido?.done && (t.slido.duration||0)<5) || (t.forms?.done && (t.forms.duration||0)<20); };
+        const copyLink = () => navigator.clipboard.writeText(`${window.location.origin}/index.html?id=${form.sessionId}`).then(()=>addToast("連結已複製", "success"));
+        const copySessionId = () => navigator.clipboard.writeText(form.sessionId).then(()=>addToast("ID 已複製", "success"));
+        const qrCodeUrl = computed(() => `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin+'/index.html?id='+form.sessionId)}`);
         
-        const revokeToken = (uid, name) => { if(confirm(`確定要強制登出 ${name} 嗎？`)) { update(dbRef(db, `classrooms/${form.sessionId}/students/${uid}/auth`), { isActive: false, token: null }); update(dbRef(db, `classrooms/${form.sessionId}/students/${uid}`), { status: 'offline' }); addToast("已強制登出該學生", "success", "fa-solid fa-link-slash"); } };
-        const deleteStudent = (uid, name) => { if(confirm(`危險：確定要永久刪除 ${name} 嗎？`)) { remove(dbRef(db, `classrooms/${form.sessionId}/students/${uid}`)); addToast("學生資料已刪除", "success", "fa-solid fa-trash"); } };
+        const getBeaconClass = (s) => { const z=CONFIG.ZODIAC.find(x=>x.label===s.profile?.Zodiac); return z?`elm-${z.element}`:''; };
+        const getStatusColor = (s) => (!s.auth?.isActive || (Date.now()-(s.lastSeen||0)>90000)) ? 'status-offline' : (s.status==='late'?'status-late':'status-online');
+        const isSpeedrun = (s) => { const t=s.tasks||{}; return (t.notebook?.duration<15) || (t.slido?.duration<5) || (t.forms?.duration<20); };
+        const revokeToken = (uid, name) => { if(confirm(`強制登出 ${name}？`)) update(dbRef(db, `classrooms/${form.sessionId}/students/${uid}`), { 'auth/isActive':false, status:'offline' }); };
+        const deleteStudent = (uid, name) => { if(confirm(`永久刪除 ${name}？`)) remove(dbRef(db, `classrooms/${form.sessionId}/students/${uid}`)); };
 
-        // --- [修改 1] 雙軌資料庫：分組協作連結 (Group Mode) ---
-        const ZODIAC_LINKS_GROUP = {
-            "子": "https://padlet.com/jnynlin/breakout-room/Vnr04VORyJVD2BdW-oAdpz2yKWAM9b10R",
-            "丑": "https://padlet.com/jnynlin/breakout-room/olbw23ZKy66R4L30-oAdpz2yKWAM9b10R",
-            "寅": "https://padlet.com/jnynlin/breakout-room/nRxeqrl17Od7456P-oAdpz2yKWAM9b10R",
-            "卯": "https://padlet.com/jnynlin/breakout-room/961rqRQbP5Wo2nND-oAdpz2yKWAM9b10R",
-            "辰": "https://padlet.com/jnynlin/breakout-room/kxPM2kBo3OEn4gbV-oAdpz2yKWAM9b10R",
-            "巳": "https://padlet.com/jnynlin/breakout-room/LProvDLe99BgvOMJ-oAdpz2yKWAM9b10R",
-            "午": "https://padlet.com/jnynlin/breakout-room/J7z0qjZ1AADLqmWQ-oAdpz2yKWAM9b10R",
-            "未": "https://padlet.com/jnynlin/breakout-room/Vnr04VORmmrX2BdW-oAdpz2yKWAM9b10R",
-            "申": "https://padlet.com/jnynlin/breakout-room/BbjnqxL788Eoq93Q-oAdpz2yKWAM9b10R",
-            "酉": "https://padlet.com/jnynlin/breakout-room/mVbpvYkOrrJB2Rkn-oAdpz2yKWAM9b10R",
-            "戌": "https://padlet.com/jnynlin/breakout-room/Vnr04VORmmJX2BdW-oAdpz2yKWAM9b10R",
-            "亥": "https://padlet.com/jnynlin/breakout-room/mWng4lAY99JJ2zdJ-oAdpz2yKWAM9b10R"
-        };
-
-        // --- [修改 2] 雙軌資料庫：個人繳交連結 (Individual Mode) ---
-        const ZODIAC_LINKS_INDIVIDUAL = {
-            "子": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=347869014",
-            "丑": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=347869666",
-            "寅": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348306592",
-            "卯": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348306612",
-            "辰": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348306638",
-            "巳": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348310975",
-            "午": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348310996",
-            "未": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311014",
-            "申": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311030",
-            "酉": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311050",
-            "戌": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311058",
-            "亥": "https://padlet.com/jnynlin/submission-request/1OL2bZeKmZGjvaK3?section=348311072"
-        };
-
-        // --- [修改 3] 上傳函式：手動強制寫入使用 (Back Up) ---
+        // --- 修正點：保留 uploadGroupLinks 作為手動備用 ---
         const uploadGroupLinks = async () => {
-            const currentType = status.config?.assignmentType || 'individual';
-            const isGroup = currentType === 'group';
-            const LINKS_TO_USE = isGroup ? ZODIAC_LINKS_GROUP : ZODIAC_LINKS_INDIVIDUAL;
-            const modeText = isGroup ? '【分組報告協作】' : '【個人作業分流】';
-            
-            if (!confirm(`手動強制寫入模式：\n\n${modeText}\n\n確定要強制覆蓋目前的 12 組連結嗎？`)) return;
-            
+            if(!confirm("確定強制寫入預設連結？")) return;
+            const isGroup = status.config?.assignmentType === 'group';
             try {
-                await update(dbRef(db, `classrooms/${form.sessionId}/groupLinks`), LINKS_TO_USE);
+                await update(dbRef(db, `classrooms/${form.sessionId}/groupLinks`), isGroup ? ZODIAC_LINKS_GROUP : ZODIAC_LINKS_INDIVIDUAL);
                 localLinks.assignment = 'https://padlet.com';
                 await update(dbRef(db, `classrooms/${form.sessionId}/status/links`), localLinks);
-                linksDirty.value = false;
-                addToast(`成功部署 ${isGroup ? '小組協作' : '個人分流'} 連結！`, "success", "fa-solid fa-link");
-            } catch (e) {
-                console.error(e);
-                addToast("上傳失敗: " + e.message, "error");
-            }
+                addToast("手動寫入完成", "success");
+            } catch(e) { console.error(e); addToast("寫入失敗", "error"); }
         };
 
-        // --- [修改 4 - 新增] 自動切換並部署函式 (Auto Deploy) ---
+        // --- NEW FEATURES: Hybrid Grading & Auto Deploy ---
+        
+        // 1. Switch Mode & Auto Deploy Links
         const switchAndDeploy = async (targetMode) => {
-            // 1. 更新 Config 狀態
             updateConfig('assignmentType', targetMode);
-            
-            // 2. 準備對應連結
             const isGroup = targetMode === 'group';
-            const LINKS_TO_USE = isGroup ? ZODIAC_LINKS_GROUP : ZODIAC_LINKS_INDIVIDUAL;
-            const modeText = isGroup ? '分組報告 (協作)' : '個人作業 (分流)';
+            const LINKS = isGroup ? ZODIAC_LINKS_GROUP : ZODIAC_LINKS_INDIVIDUAL;
+            const modeText = isGroup ? '分組報告' : '個人作業';
 
             try {
-                // 3. 寫入連結庫
-                await update(dbRef(db, `classrooms/${form.sessionId}/groupLinks`), LINKS_TO_USE);
-                
-                // 4. 重置主按鈕連結 (讓學生點擊主按鈕後被導流)
+                await update(dbRef(db, `classrooms/${form.sessionId}/groupLinks`), LINKS);
                 localLinks.assignment = 'https://padlet.com';
                 await update(dbRef(db, `classrooms/${form.sessionId}/status/links`), localLinks);
-                
-                linksDirty.value = false;
-                addToast(`已切換至 [${modeText}] 並完成連結部署！`, "success", "fa-solid fa-rotate");
-            } catch (e) {
-                console.error(e);
-                addToast("自動部署失敗: " + e.message, "error");
-            }
+                addToast(`已切換至 [${modeText}] 並完成連結部署`, "success", "fa-solid fa-rotate");
+            } catch (e) { console.error(e); addToast("自動部署失敗", "error"); }
+        };
+
+        // 2. Update Group Score (Clamped & Validated)
+        const updateGroupScore = (uid, type, value) => {
+            let val = parseFloat(value);
+            if (isNaN(val)) val = 0;
+            // Clamping: Max 8 for product, Max 7 for participation
+            if (type === 'product' && val > 8) val = 8;
+            if (type === 'participation' && val > 7) val = 7;
+            if (val < 0) val = 0;
+            
+            update(dbRef(db, `classrooms/${form.sessionId}/students/${uid}/tasks/group_b`), { [type]: val });
+        };
+
+        // 3. View Feedback
+        const viewFeedback = (s) => {
+            const content = s.feedback ? s.feedback : "❌ 該生尚未填寫任何心得貢獻。";
+            alert(`【${s.profile?.Name} 的貢獻自述】\n\n${content}`);
+        };
+
+        // 4. Hybrid Score Calculation
+        const calculateScore = (student) => {
+            let score = 0; const t = student.tasks || {};
+            // Group A (70)
+            if(t.calibration?.done) score+=5;
+            if(t.notebook?.done) score+=(t.notebook.duration<15?5:15);
+            if(t.slido?.done) score+=(t.slido.duration<5?5:15);
+            if(t.forms?.done) score+=(t.forms.duration<20?10:25);
+            if(student.rating>0) score+=10;
+            
+            // Group B (30) - Hybrid
+            if(t.assignment?.done) score+=15; // 個人 (15)
+            if(typeof t.group_b?.product === 'number') score+=t.group_b.product; // 作品 (0-8)
+            if(typeof t.group_b?.participation === 'number') score+=t.group_b.participation; // 參與 (0-7)
+            
+            return score;
         };
 
         return { 
-            form, state: status, schedule, localLinks, linksDirty, toasts, showImporter, importRaw, importMode, parsedPreview, searchQuery,
-            hasJoined: isLogin, displayedList, studentCount: computed(() => allStudents.value.length), activeCount, stats, globalProgress, phases: CONFIG.PHASES, qrCodeUrl,
-            login: () => performLogin(form.password), logout, 
-            setStatus: updateStatus, switchPhase, updateConfig, saveSchedule, refreshId, copyLink, copySessionId, syncLinks,
+            form, state: status, localLinks, linksDirty, toasts, showImporter, importRaw, importMode, parsedPreview, searchQuery,
+            hasJoined: isLogin, displayedList, studentCount: computed(()=>allStudents.value.length), activeCount, stats, globalProgress, phases: CONFIG.PHASES, qrCodeUrl,
+            login: () => performLogin(form.password), logout, setStatus: updateStatus, switchPhase, updateConfig, syncLinks, refreshId, copyLink, copySessionId,
             parseInput, generateDemoRoster, executeImport,
             getStatusColor, calculateScore, isSpeedrun, getBeaconClass, revokeToken, deleteStudent,
-            syncToSheets, isSyncing, cloneToNewSession, isMigrating,
+            syncToSheets, isSyncing,
             sessionHistory, showHistory, manualSessionId, switchSession,
-            isLatestSession: computed(() => form.sessionId === latestSessionId.value),
-            uploadGroupLinks, switchAndDeploy // 記得匯出新函式
+            // Export New Features
+            switchAndDeploy, updateGroupScore, viewFeedback, uploadGroupLinks
         };
     }
 }).mount('#app');

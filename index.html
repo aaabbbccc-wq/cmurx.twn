@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Student Portal | v4.6 Mystery</title>
+    <title>Student Portal | v4.9 Dual-Track</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3.4.19/dist/vue.global.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -40,7 +40,6 @@
         .theme-air { --accent: #fbbf24; --bg-glow: rgba(251, 191, 36, 0.15); }
         .theme-earth { --accent: #22c55e; --bg-glow: rgba(34, 197, 94, 0.15); }
         
-        /* [新增] 神秘模式樣式 */
         .theme-secret { --accent: #94a3b8; --bg-glow: rgba(148, 163, 184, 0.1); } 
 
         .beacon-border { border-color: var(--accent) !important; box-shadow: 0 0 15px var(--bg-glow); }
@@ -76,7 +75,7 @@
             <div class="relative z-10 text-center">
                 <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl text-white shadow-lg"><i class="fa-solid fa-graduation-cap"></i></div>
                 <h1 class="text-3xl font-extrabold text-white mb-2">Student</h1>
-                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.6 (Mystery)</p>
+                <p class="text-slate-400 text-xs font-mono mb-8">Secure Access v4.9 (Smart)</p>
                 <div class="space-y-4">
                     <div><label class="text-[10px] font-bold text-slate-500 uppercase">Session ID</label><input v-model="form.sessionId" class="w-full p-4 bg-slate-800 border border-slate-600 rounded-xl font-mono font-bold text-center text-xl text-white outline-none focus:border-blue-500 uppercase placeholder:text-slate-600" placeholder="教室代碼"></div>
                     <button @click="enterRoom" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold transition shadow-lg shadow-blue-900/30 disabled:opacity-50 flex justify-center items-center gap-2">
@@ -339,6 +338,8 @@ const db = getDatabase(app);
 
 const sanitize = (str) => str ? str.replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]) : '';
 const getZodiacIcon = (label) => CONFIG.ZODIAC.find(z => z.label === label)?.icon || '👤';
+const getBeaconClass = (label) => { if (!isGroupRevealed.value) return 'theme-secret'; const z = CONFIG.ZODIAC.find(x => x.label === label); return z ? `theme-${z.element}` : 'theme-earth'; };
+const getCurrentIcon = () => { if (!isGroupRevealed.value) return '❓'; return myProfile.zodiac?.icon || '👤'; };
 
 function useSound() {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -432,26 +433,60 @@ function useTasks(sessionId, myUid, globalState, myProfile, addToast, playSFX) {
     const groupADone = computed(() => myTasks.notebook.done && myTasks.slido.done && myTasks.forms.done);
     const submitDebrief = () => { if (!myUid.value) return; if(tempFeedback.value.length < 5) return addToast("請多寫一點心得", "error"); update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}`), { rating: tempRating.value, feedback: sanitize(tempFeedback.value) }); isEditing.value = false; addToast("心得與評分已更新！", "success"); };
 
-    // [修改] 按需讀取連結邏輯
+    // [修改] 連結開啟邏輯：支援個人作業分流
     const openLink = async (k) => {
         playSFX('click');
-        if (k === 'discussion') {
+
+        // 情境 A: 點擊「分組討論」 (Group Mode)
+        // 情境 B: 點擊「作業繳交」且模式為「個人」 (Individual Mode 分流)
+        const isIndividualAssignment = k === 'assignment' && globalState.config?.assignmentType === 'individual';
+        
+        if (k === 'discussion' || isIndividualAssignment) {
             if (!myProfile.zodiac) { addToast("無法識別您的生肖身分", "error"); return; }
+            
             const zodiacKey = myProfile.zodiac.label.charAt(0);
-            addToast(`正在取得 [${zodiacKey}] 組連結...`, "info");
+            const actionName = k === 'discussion' ? '討論區' : '個人作業區';
+            
+            addToast(`正在前往 [${zodiacKey}] ${actionName}...`, "info");
+            
             try {
                 const snapshot = await get(dbRef(db, `classrooms/${sessionId.value}/groupLinks/${zodiacKey}`));
                 if (snapshot.exists()) {
                     const url = snapshot.val();
-                    if(myUid.value) update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/assignment`), { started: true, startTime: Date.now() });
+                    
+                    // 防呆提示
+                    alert("【重要提醒】\n\n進入 Padlet 後，因為是訪客身份，系統無法自動帶入姓名。\n\n請務必在貼文「標題」處填寫：\n👉 學號 + 姓名\n\n否則助教無法評分！");
+
+                    // 如果是作業，記錄開始時間
+                    if(k === 'assignment' && myUid.value) {
+                        update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/assignment`), { 
+                            started: true, 
+                            startTime: Date.now(),
+                            type: 'individual'
+                        });
+                    }
                     window.open(url, '_blank');
-                } else { addToast("老師尚未設定分組連結", "error"); }
-            } catch (e) { console.error(e); addToast("讀取失敗，請檢查網路", "error"); }
+                } else { 
+                    addToast("老師尚未設定分組連結", "error"); 
+                }
+            } catch (e) { 
+                console.error(e); 
+                addToast("讀取失敗，請檢查網路", "error"); 
+            }
             return;
         }
-        if(myUid.value && !myTasks[k].started) { update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { started: true, startTime: Date.now() }); }
+
+        // 情境 C: 其他連結
+        if(myUid.value && !myTasks[k].started) {
+            update(dbRef(db, `classrooms/${sessionId.value}/students/${myUid.value}/tasks/${k}`), { 
+                started: true, 
+                startTime: Date.now(),
+                type: globalState.config?.assignmentType || 'general'
+            });
+        }
         if(globalState.links?.[k]) window.open(globalState.links[k], '_blank');
     };
+
     return { myTasks, tempCalibration, tempRating, tempFeedback, initTaskSync, markDone, isUnlocked, isEditing, groupADone, assignmentMeta, submitCalibration, submitDebrief, openLink };
 }
 
